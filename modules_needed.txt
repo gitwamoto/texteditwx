@@ -1,0 +1,19 @@
+以下をコマンドプロンプトかターミナルで実行して下さい．
+
+python 3の場合: pip install wxPython pyperclip requests pexpect zenhan
+
+python 2の場合: pip install wxPython==4.1.0 pyperclip requests pexpect zenhan
+
+
+
+
+maximaをインストールする必要があります．
+デフォルトでインストールしている場合は大丈夫ですが，maximaが起動しない場合はmaximaへのパスが間違っている可能性が大きいです．
+maxima_location = の右辺を正しいパスに修正して下さい．
+
+
+
+
+texteditwx.pyは以下のアドレスからダウンロードできます．
+
+https://drive.google.com/file/d/1Rm9P1CIbn_YUuvpMYj39MSF7djuVnPPV/view?usp=sharing
