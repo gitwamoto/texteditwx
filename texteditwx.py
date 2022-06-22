@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2022/4/2 4:35:59 PM
+# 2022/6/22 11:33:58 AM
 
-version = '2022/4/2 4:35:59 PM'
+version = '2022/6/22 11:33:58 AM'
 
 import sys
 
@@ -1402,11 +1402,11 @@ class TableForFind(MyTable):
         for i in self.data:
             s += u'[{}, {}, '.format(i[self.COL_ACTIVE], i[self.COL_RE])
             if i[self.COL_FIND] is not None:
-                s += u"'" + i[self.COL_FIND].replace("\\", r"\\").replace("'", r"\'") + u"', "
+                s += u"'" + i[self.COL_FIND].replace('\\', r'\\').replace('\n', r'\n').replace("'", r'\'') + u"', "
             else:
                 s += u'None, '
             if i[self.COL_REPLACE] is not None:
-                s += u"'" + i[self.COL_REPLACE].replace("\\", r"\\").replace("'", r"\'") + u"'], "
+                s += u"'" + i[self.COL_REPLACE].replace('\\', r'\\').replace('\n', r'\n').replace("'", r"\'") + u"'], "
             else:
                 s += u'None], '
         return s[:-2] + u']'
