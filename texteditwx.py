@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2022/6/22 11:33:58 AM
+# 2022/7/21 11:32:09 AM
 
 version = '2022/6/22 11:33:58 AM'
 
@@ -398,9 +398,9 @@ class Maxima(object):
                     s = self.maxima.before[self.maxima.before.find('\n') + 1:].lstrip('\n').rstrip()
                 if debug:
                     print('s = "{}"'.format(s))
-                if c.endswith('$') and (s == '' or s.startswith('(%i')):
+                if c.endswith('$') and (s == '' or s.startswith('(%i') or s.endswith('$')):
                     if ('incorrect syntax: ' in s or s.endswith(' -- an error. To debug this try: debugmode(true);') or
-                        'Maxima encountered a Lisp error: '):
+                        'Maxima encountered a Lisp error: ' in s):
                         l_output = len(s)
                         s = '/* ERROR: */\n' + s
                         if replace:
@@ -438,7 +438,7 @@ class Maxima(object):
                     l_output = len(s)
                     s = '/* WARNING */\n' + s
                 elif ('incorrect syntax: ' in s or s.endswith(' -- an error. To debug this try: debugmode(true);') or
-                    'Maxima encountered a Lisp error: '):
+                    'Maxima encountered a Lisp error: ' in s):
                     l_output = len(s)
                     s = '/* ERROR: */\n' + s
                     if replace:
