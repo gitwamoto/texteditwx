@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2022/7/21 11:32:09 AM
+# 2022/7/22 10:00:42 AM
 
-version = '2022/6/22 11:33:58 AM'
+version = '2022/7/22 10:00:42 AM'
 
 import sys
 
@@ -564,6 +564,8 @@ class MyTextCtrl(wx.TextCtrl):
         u'cosh(x)',
         u'determinant(matrix)',
         u'depends(f_1, x_1, ..., [f_n, g_n], [x_n, y_n])',
+        u'dependencies',
+        u'diag([a11, a22, ...]) /* needs load("diag") */',
         u'diff(expr, x)',
         u'diff(expr, x, n)',
         u'eigenvalues(matrix)',
