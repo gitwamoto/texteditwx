@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2022/7/22 10:00:42 AM
+# 2022/7/28 3:00:24 PM
 
-version = '2022/7/22 10:00:42 AM'
+version = '2022/7/28 3:00:24 PM'
 
 import sys
 
@@ -586,6 +586,7 @@ class MyTextCtrl(wx.TextCtrl):
         u'fpprec: digits$',
         u"ic1(ode2('diff(y, x) ..., y, x), x = x0, y = y0)",
         u"ic2(ode2('diff(y, x) ..., y, x), x = x0, y = y0, 'diff(y, x) = dy0)",
+        u'ident(n)',
         u'inf /* real positive infinity */',
         u'infinity /* complex infinity */',
         u'integrate(expr, x)',
