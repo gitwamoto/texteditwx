@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2022/7/28 3:25:43 PM
+# 2022/9/1 10:02:42 AM
 
-version = '2022/7/28 3:25:43 PM'
+version = '2022/9/1 10:02:42 AM'
 
 import sys
 
@@ -422,6 +422,9 @@ class Maxima(object):
                         s = '/* HELP: */\n' + s[:i].rstrip()
                         if self.in_help:
                             self.in_help = False
+                    elif c.startswith('example('):
+                        l_output = 0
+                        s = '/* EXAMPLE: */\n' + s[:i].rstrip()
                     else:
                         s = self.modify_output(s[i + r.end():])
                         l_output = len(s)
@@ -466,7 +469,7 @@ class Maxima(object):
                 outputs.append(self.maxima.after.strip() + '\n\n')
                 return outputs, 0
         self.last_input = '/* ' + self.last_input.strip() + ': */'
-        return outputs, l_output
+        return outputs, l_output # l_output is used for selection range in a display
 
     def modify_output(self, s):
         debug = False
@@ -574,6 +577,7 @@ class MyTextCtrl(wx.TextCtrl):
         u'erfc(x)',
         u'ev(expr, x = a)',
         u'exp(x)',
+        u'example(topic)',
         u'expand(expr)',
         u'declare(a_1, integer, ...)$ /* <-> remove(a_1, integer, ...)$ */ facts();',
         u"desolve('diff(f(x), x) ..., f(x))",
@@ -595,6 +599,7 @@ class MyTextCtrl(wx.TextCtrl):
         u'kill(a_1, ...)$',
         u'kill(all)$',
         u'levi_civita([i, j, k]) /* needs load("itensor") */',
+        u'limit(expr, x, val)',
         u'matrix([a_11, ...], [a_21, ...])',
         u'max(x_1, ...)',
         u'minf /* real negative infinity */',
