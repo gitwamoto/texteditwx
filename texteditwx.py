@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2022/9/1 10:02:42 AM
+# 2022/9/7 9:22:04 AM
 
 version = '2022/9/1 10:02:42 AM'
 
@@ -3000,7 +3000,8 @@ class FrameMain(wx.Frame):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('flowRateInletVelocity',
             '体積流量または質量流量で流入速度を設定し，\n境界に平行な方向の速度は0にする．',
             'volumetricFlowRate 0.1; // 体積流量, massFlowRateとは併用できない．\n' +
-            '// massFlowRate 0.1; // 質量流量, volumetricFlowRate併用できない．\n// rhoInlet 1; // 密度, massFlowRateの場合に必要\n' +
+            '// massFlowRate 0.1; // 質量流量, volumetricFlowRateとは併用できない．\n' +
+            '// rhoInlet 1; // 密度, massFlowRateの場合に必要\n' +
             'extrapolateProfile false;\n// true→内側と相似な速度分布で流入 | false→一様流入\n' +
             'value $internalField; // 実際には使わないけど必要',
             openfoam_src + '/finiteVolume/fields/fvPatchFields/derived/flowRateInletVelocity'),
