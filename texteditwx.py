@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2022/9/7 9:22:04 AM
+# 2022/10/5 1:12:43 PM
 
-version = '2022/9/1 10:02:42 AM'
+version = '2022/10/5 1:12:43 PM'
 
 import sys
 
@@ -270,7 +270,7 @@ def line_numbered_str(s, head = True, prefix = '', suffix = ': '):
         s = s[:-len(r)]
     return s
 
-openfoam_src = 'https://develop.openfoam.com/Development/openfoam/tree/maintenance-v1906/src/'
+openfoam_src = 'https://develop.openfoam.com/Development/openfoam/tree/maintenance-v2106/src/'
 
 def openfoam_bc_template_string(bc, indent = '', include_src_url = False):
     s = indent + '{\n' + indent + '\ttype ' + bc[0] + ';\n'
@@ -2384,6 +2384,12 @@ class FrameMain(wx.Frame):
         self.menuItem_OF_flowRateInletVelocity = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'flowRateInletVelocity',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_F.Append(self.menuItem_OF_flowRateInletVelocity)
+        self.menuItem_OF_freestreamPressure = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'freestreamPressure',
+            wx.EmptyString, wx.ITEM_NORMAL)
+        self.menu_OF_bc_F.Append(self.menuItem_OF_freestreamPressure)
+        self.menuItem_OF_freestreamVelocity = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'freestreamVelocity',
+            wx.EmptyString, wx.ITEM_NORMAL)
+        self.menu_OF_bc_F.Append(self.menuItem_OF_freestreamVelocity)
         self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_F, _(u'Fで始まるもの'))
         self.menu_OF_bc_G = wx.Menu()
         self.menuItem_OF_greyDiffusiveRadiationViewFactor = wx.MenuItem(self.menu_OF, wx.ID_ANY,
@@ -2565,6 +2571,8 @@ class FrameMain(wx.Frame):
         self.Bind(wx.EVT_MENU, self.menuItem_OF_fixedGradientyOnMenuSelection, id = self.menuItem_OF_fixedGradient.GetId())
         self.Bind(wx.EVT_MENU, self.menuItem_OF_fixedValueOnMenuSelection, id = self.menuItem_OF_fixedValue.GetId())
         self.Bind(wx.EVT_MENU, self.menuItem_OF_flowRateInletVelocityOnMenuSelection, id = self.menuItem_OF_flowRateInletVelocity.GetId())
+        self.Bind(wx.EVT_MENU, self.menuItem_OF_freestreamPressureOnMenuSelection, id = self.menuItem_OF_freestreamPressure.GetId())
+        self.Bind(wx.EVT_MENU, self.menuItem_OF_freestreamVelocityOnMenuSelection, id = self.menuItem_OF_freestreamVelocity.GetId())
         self.Bind(wx.EVT_MENU, self.menuItem_OF_greyDiffusiveRadiationViewFactorOnMenuSelection,
             id = self.menuItem_OF_greyDiffusiveRadiationViewFactor.GetId())
         self.Bind(wx.EVT_MENU, self.menuItem_OF_inletOutletOnMenuSelection, id = self.menuItem_OF_inletOutlet.GetId())
@@ -3005,6 +3013,28 @@ class FrameMain(wx.Frame):
             'extrapolateProfile false;\n// true→内側と相似な速度分布で流入 | false→一様流入\n' +
             'value $internalField; // 実際には使わないけど必要',
             openfoam_src + '/finiteVolume/fields/fvPatchFields/derived/flowRateInletVelocity'),
+            indent = '\t'))
+
+    def menuItem_OF_freestreamPressureOnMenuSelection(self, event):
+        self.textCtrl_edit.WriteText(openfoam_bc_template_string(('freestreamPressure',
+            'pに対する自由流入出条件．freestreamVelocityと併用する．\n' +
+            '境界垂直方向と流速方向が完全に同じ向きで\n' +
+            '流入する時はzeroGradienに規定し，\n' +
+            '流出する時はfreestreamValueにする．\n' +
+            '完全に同じでないときは，これらの間を連続的に変化させたものを使う．',
+            'freestreamValue uniform 1.0e+05;',
+            openfoam_src + '/finiteVolume/fields/fvPatchFields/derived/freestreamPressure'),
+            indent = '\t'))
+
+    def menuItem_OF_freestreamVelocityOnMenuSelection(self, event):
+        self.textCtrl_edit.WriteText(openfoam_bc_template_string(('freestreamVelocity',
+            'Uに対する自由流入出条件．freestreamPressureと併用する．\n' +
+            '境界垂直方向と流速方向が完全に同じ向きで\n' +
+            '流入する時はfreestreamValueに規定し，\n' +
+            '流出する時はzeroGradientにする．\n' +
+            '完全に同じでないときは，これらの間を連続的に変化させたものを使う．',
+            'freestreamValue uniform (100 0 0);',
+            openfoam_src + '/finiteVolume/fields/fvPatchFields/derived/freestreamVelocity'),
             indent = '\t'))
 
     def menuItem_OF_greyDiffusiveRadiationViewFactorOnMenuSelection(self, event):
