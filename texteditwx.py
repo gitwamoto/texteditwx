@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2022/10/5 1:12:43 PM
+# 2022/11/25 5:22:27 PM
 
-version = '2022/10/5 1:12:43 PM'
+version = '2022/11/25 5:22:27 PM'
 
 import sys
 
@@ -138,7 +138,7 @@ def str_diff(str1, str2):
     return [i, str1[i:l1 + j], str2[i:l2 + j]] # j < 0
 
 def str_range_between(s, selection, parentheses):
-    if not hasattr(parentheses[0], '__iter__'):
+    if not isinstance(parentheses[0], (tuple, list)):
         parentheses = (parentheses,)
     s0 = s[:selection[0]]
     l0 = selection[0] - 1
@@ -181,11 +181,11 @@ def str_range_between(s, selection, parentheses):
 def str_levels(s, parentheses = None, literals = None, literal_escape = ''):
     if parentheses is None:
         parentheses = tuple()
-    elif not hasattr(parentheses[0], '__iter__'):
+    elif not isinstance(parentheses[0], (tuple, list)):
         parentheses = (parentheses,)
     if literals is None:
         literals = tuple()
-    elif not hasattr(literals[0], '__iter__'):
+    elif not isinstance(literals[0], (tuple, list)):
         literals = (literals,)
     i = start = 0
     literal = False
