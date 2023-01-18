@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2022/11/25 5:22:27 PM
+# 2023/1/18 8:48:16 PM
 
-version = '2022/11/25 5:22:27 PM'
+version = '2023/1/18 8:48:16 PM'
 
 import sys
 
@@ -2440,6 +2440,9 @@ class FrameMain(wx.Frame):
         self.menuItem_OF_pressureInletOutletVelocity = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'pressureInletOutletVelocity',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_P.Append(self.menuItem_OF_pressureInletOutletVelocity)
+        self.menuItem_OF_prghPressure = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'prghPressure',
+            wx.EmptyString, wx.ITEM_NORMAL)
+        self.menu_OF_bc_P.Append(self.menuItem_OF_prghPressure)
         self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_P, _(u'Pで始まるもの'))
         self.menu_OF_bc_S = wx.Menu()
         self.menuItem_OF_slip = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'slip',
@@ -2587,6 +2590,7 @@ class FrameMain(wx.Frame):
         self.Bind(wx.EVT_MENU, self.menuItem_OF_outletPhaseMeanVelocityOnMenuSelection, id = self.menuItem_OF_outletPhaseMeanVelocity.GetId())
         self.Bind(wx.EVT_MENU, self.menuItem_OF_pressureInletOutletVelocityOnMenuSelection,
             id = self.menuItem_OF_pressureInletOutletVelocity.GetId())
+        self.Bind(wx.EVT_MENU, self.menuItem_OF_prghPressureOnMenuSelection, id = self.menuItem_OF_prghPressure.GetId())
         self.Bind(wx.EVT_MENU, self.menuItem_OF_slipOnMenuSelection, id = self.menuItem_OF_slip.GetId())
         self.Bind(wx.EVT_MENU, self.menuItem_OF_surfaceNormalFixedValueOnMenuSelection, id = self.menuItem_OF_surfaceNormalFixedValue.GetId())
         self.Bind(wx.EVT_MENU, self.menuItem_OF_symmetryOnMenuSelection, id = self.menuItem_OF_symmetry.GetId())
@@ -3012,7 +3016,7 @@ class FrameMain(wx.Frame):
             '// rhoInlet 1; // 密度, massFlowRateの場合に必要\n' +
             'extrapolateProfile false;\n// true→内側と相似な速度分布で流入 | false→一様流入\n' +
             'value $internalField; // 実際には使わないけど必要',
-            openfoam_src + '/finiteVolume/fields/fvPatchFields/derived/flowRateInletVelocity'),
+            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/flowRateInletVelocity'),
             indent = '\t'))
 
     def menuItem_OF_freestreamPressureOnMenuSelection(self, event):
@@ -3023,7 +3027,7 @@ class FrameMain(wx.Frame):
             '流出する時はfreestreamValueにする．\n' +
             '完全に同じでないときは，これらの間を連続的に変化させたものを使う．',
             'freestreamValue uniform 1.0e+05;',
-            openfoam_src + '/finiteVolume/fields/fvPatchFields/derived/freestreamPressure'),
+            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/freestreamPressure'),
             indent = '\t'))
 
     def menuItem_OF_freestreamVelocityOnMenuSelection(self, event):
@@ -3034,7 +3038,7 @@ class FrameMain(wx.Frame):
             '流出する時はzeroGradientにする．\n' +
             '完全に同じでないときは，これらの間を連続的に変化させたものを使う．',
             'freestreamValue uniform (100 0 0);',
-            openfoam_src + '/finiteVolume/fields/fvPatchFields/derived/freestreamVelocity'),
+            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/freestreamVelocity'),
             indent = '\t'))
 
     def menuItem_OF_greyDiffusiveRadiationViewFactorOnMenuSelection(self, event):
@@ -3136,14 +3140,22 @@ class FrameMain(wx.Frame):
             u'Uに使用\n計算領域内に流入する場合→垂直方向成分はこう配が0，\n接線方向成分はtangentialVelocityのうちの接線方向成分のみ\n' +
             u'計算領域外に流出する場合→全成分でこう配が0',
             u'tangentialVelocity uniform (0 0 0);\nvalue $internalField; // 実際には使わないけど必要',
-            openfoam_src + '/finiteVolume/fields/fvPatchFields/derived/pressureInletOutletVelocity'),
+            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/pressureInletOutletVelocity'),
+            indent = '\t'))
+
+    def menuItem_OF_prghPressureOnMenuSelection(self, event):
+        self.textCtrl_edit.WriteText(openfoam_bc_template_string(('prghPressure',
+            u'p_rghに使用\n設定したいpの値からp_rghを計算して設定する．\n対応するパッチのpにはcalculatedを使う．',
+            u'rho rhok; // 計算で用いる密度の変数名，rhoまたはrhok\n// pの次元がPaの場合→rho，m^2/s^2にの場合→rhok\n' +
+            u'p uniform 0; // 設定したいpの値',
+            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/prghPressure'),
             indent = '\t'))
 
     def menuItem_OF_slipOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('slip',
             u'非粘性流れの壁面境界条件',
             u'',
-            openfoam_src + '/finiteVolume/fields/fvPatchFields/derived/slip'),
+            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/slip'),
             indent = '\t'))
 
     def menuItem_OF_surfaceNormalFixedValueOnMenuSelection(self, event):
