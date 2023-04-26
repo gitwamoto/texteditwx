@@ -84,7 +84,6 @@ def get_file_from_google_drive(file_id):
             r = requests.get('https://drive.google.com/uc',
                 params = (('export', 'download'), ('confirm', code), ('id', file_id)), cookies = cookies)
             r.encoding = r.apparent_encoding
-            print(r.text)
         return r.text # unicode
     except:
 #        print(sys.exc_info())
