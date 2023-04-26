@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2023/1/18 8:48:16 PM
+# 2023/4/26 3:03:21 PM
 
-version = '2023/1/18 8:48:16 PM'
+version = '2023/4/26 3:03:21 PM'
 
 import sys
 
@@ -77,11 +77,17 @@ def get_file_from_google_drive(file_id):
                 m = re.search('id="downloadForm" action=".+?&amp;confirm=(.+?)"', r.text)
                 if m:
                     code = m.group(1)
+                else:
+                    m = re.search('&amp;confirm=t&amp;uuid=(.+?)"', r.text)
+                    if m:
+                        code = m.group(1)
             r = requests.get('https://drive.google.com/uc',
                 params = (('export', 'download'), ('confirm', code), ('id', file_id)), cookies = cookies)
             r.encoding = r.apparent_encoding
+            print(r.text)
         return r.text # unicode
     except:
+#        print(sys.exc_info())
         raise
 
 def time_str_a_is_newer_than_b(a, b):
