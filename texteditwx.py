@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2023/4/26 3:03:21 PM
+# 2023/5/18 5:23:37 PM
 
-version = '2023/4/26 3:03:21 PM'
+version = '2023/5/18 5:23:37 PM'
 
 import sys
 
@@ -31,6 +31,7 @@ import pyperclip # pip install pyperclip
 import requests
 import zenhan
 import ast
+import webbrowser
 
 if sys.platform != 'darwin':
     import locale # required for a format '%p' (AM/PM) in strftime
@@ -63,10 +64,9 @@ if sys.platform == 'darwin':
     import unicodedata
 
 def get_file_from_google_drive(file_id):
-    try:
-        r = requests.get('https://drive.google.com/uc', params = (('export', 'download'), ('id', file_id)))
-        r.encoding = r.apparent_encoding
-        if r.text.find('Google Drive - Virus scan warning') != -1:
+    r = requests.get('https://drive.google.com/uc', params = {'export': 'download', 'id': file_id})
+    if r.ok:
+        if b'Google Drive - Virus scan warning' in r.content:
             cookies = r.cookies.get_dict()
             if cookies:
                 for k in cookies.keys():
@@ -74,20 +74,27 @@ def get_file_from_google_drive(file_id):
                         code = cookies[k]
                         break
             else: # https://github.com/wkentaro/gdown/blob/1bf9e20442a0df57eec3e75a15ef4115dbec9b2f/gdown/download.py#L32
-                m = re.search('id="downloadForm" action=".+?&amp;confirm=(.+?)"', r.text)
+                m = re.search(b'id="downloadForm" action=".+?&amp;confirm=(.+?)"', r.content)
                 if m:
                     code = m.group(1)
                 else:
-                    m = re.search('&amp;confirm=t&amp;uuid=(.+?)"', r.text)
+                    m = re.search(b'&amp;confirm=t&amp;uuid=(.+?)"', r.content)
                     if m:
                         code = m.group(1)
             r = requests.get('https://drive.google.com/uc',
-                params = (('export', 'download'), ('confirm', code), ('id', file_id)), cookies = cookies)
-            r.encoding = r.apparent_encoding
-        return r.text # unicode
-    except:
-#        print(sys.exc_info())
-        raise
+                params = {'export': 'download', 'confirm': code, 'id': file_id}, cookies = cookies)
+            if not r.ok:
+                return None
+        return r.content, r.apparent_encoding # type(r.content) = str (Python 2); bytes (Python 3)
+    else:
+        return None
+
+def get_file_from_github_public(user, repository, branch, file_path):
+    r = requests.get('https://raw.githubusercontent.com/' + user + '/' + repository + '/' + branch + '/' + file_path)
+    if r.ok:
+        return r.content, r.apparent_encoding # type(r.content) = str (Python 2); bytes (Python 3)
+    else:
+        return None
 
 def time_str_a_is_newer_than_b(a, b):
     reg = re.compile(r'([0-9]+)\s*[/\-]\s*([0-9]+)\s*[/\-]\s*([0-9]+)\s+([0-9]+)\s*:\s*([0-9]+)\s*(?::\s*([0-9]+)\s*)?([AaPp][Mm])*')
@@ -2493,6 +2500,8 @@ class FrameMain(wx.Frame):
         self.menu_help = wx.Menu()
         self.menuItem_update = wx.MenuItem(self.menu_help, wx.ID_ANY, _(u'アップデート'), wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_help.Append(self.menuItem_update)
+        self.menuItem_movie = wx.MenuItem(self.menu_help, wx.ID_ANY, _(u'使い方の動画'), wx.EmptyString, wx.ITEM_NORMAL)
+        self.menu_help.Append(self.menuItem_movie)
         self.menubar.Append(self.menu_help, _(u'ヘルプ') + u'(&H)')
 
         self.SetMenuBar(self.menubar)
@@ -2610,6 +2619,7 @@ class FrameMain(wx.Frame):
         self.Bind(wx.EVT_MENU, self.menuItem_OF_variableHeightFlowRateOnMenuSelection, id = self.menuItem_OF_variableHeightFlowRate.GetId())
         self.Bind(wx.EVT_MENU, self.menuItem_OF_zeroGradientOnMenuSelection, id = self.menuItem_OF_zeroGradient.GetId())
         self.Bind(wx.EVT_MENU, self.menuItem_updateOnMenuSelection, id = self.menuItem_update.GetId())
+        self.Bind(wx.EVT_MENU, self.menuItem_movieOnMenuSelection, id = self.menuItem_movie.GetId())
 
         self.backup_path = correct_file_name_in_unicode(os.path.join(os.path.dirname(
             os.path.realpath(decode_if_necessary(__file__))), u'backup_texteditwx.txt')) # unicode
@@ -3232,35 +3242,23 @@ class FrameMain(wx.Frame):
             indent = '\t'))
 
     def menuItem_updateOnMenuSelection(self, event):
-        try:
-            s = get_file_from_google_drive('1Rm9P1CIbn_YUuvpMYj39MSF7djuVnPPV')
-            if sys.platform == 'darwin' and sys.version_info.major <= 2:
-                s = s.decode('UTF-8')
-        except:
+#        s = get_file_from_google_drive('1Rm9P1CIbn_YUuvpMYj39MSF7djuVnPPV')
+        s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
+            branch = 'main', file_path = 'texteditwx.py')
+        if s is None:
             with wx.MessageDialog(self,
-                _(u'Googleドライブに接続できませんでした．後でやり直して下さい．'),
+                _(u'GitHubに接続できませんでした．後でやり直して下さい．'),
                 _(u'接続エラー'), style = wx.ICON_ERROR) as md:
                 md.ShowModal()
             return
-        r = re.search(r"version\s*=\s*'([0-9/ :APM]+)'\n", s)
-        if r is not None and time_str_a_is_newer_than_b(a = r.group(1), b = version):
+        r = re.search(b"version\s*=\s*'([0-9/ :APM]+)'\n", s[0])
+        if r is not None and time_str_a_is_newer_than_b(a = r.group(1).decode(s[1]), b = version):
             p = correct_file_name_in_unicode(os.path.realpath(decode_if_necessary(__file__)))
-            with codecs.open(p, 'w', encoding = 'UTF-8') as f:
-                f.write(s)
-#            try:
-#                d = os.path.join(os.path.dirname(p), u'locale', u'en', u'LC_MESSAGES')
-#                if not os.path.isdir(d):
-#                    os.makedirs(d)
-#                with open(os.path.join(d, u'messages.mo'), 'wb') as f:
-#                    f.write(get_file_from_google_drive('1xVuaz179QpwFxb2Xf0zJFkn1x0HT_plC'))
-#            except:
-##                print(sys.exc_info())
-#                pass
-#            if sys.platform != 'darwin':
-#                for curDir, dirs, files in os.walk(os.path.dirname(p)):
-#                    for name in files:
-#                        if re.match('\._.+|[._]+DS_Store', name):
-#                            os.remove(os.path.join(curDir, name))
+            with open(p, 'wb') as f:
+                f.write(s[0])
+            pd = os.path.dirname(p)
+            if os.path.isfile(os.path.join(pd, u'modules_needed.txt')):
+                os.remove(os.path.join(pd, u'modules_needed.txt'))
             with wx.MessageDialog(self, _(u'プログラムを実行し直すとアップデートが有効になります．'),
                 _(u'アップデート完了'), style = wx.ICON_INFORMATION) as md:
                 md.ShowModal()
@@ -3268,6 +3266,9 @@ class FrameMain(wx.Frame):
             with wx.MessageDialog(self, _(u'アップデートの必要はありません．'),
                 _(u'プログラムは最新です．'), style = wx.ICON_INFORMATION) as md:
                 md.ShowModal()
+
+    def menuItem_movieOnMenuSelection(self, event):
+        webbrowser.open(url = 'https://youtu.be/2z8mbayskQU')
 
 if __name__ == '__main__':
     # if __name__ == '__main__'下はグローバルスコープです。
