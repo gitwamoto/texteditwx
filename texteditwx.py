@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2023/9/17 8:14:30 AM
+# 2023/11/8 6:26:26 PM
 
-version = '2023/9/17 8:14:30 AM'
+version = '2023/11/8 6:26:26 PM'
 
 import sys
 
@@ -438,7 +438,11 @@ class Maxima(object):
                         l_output = 0
                         s = '/* EXAMPLE: */\n' + s[:i].rstrip()
                     else:
-                        s = self.modify_output(s[i + r.end():])
+                        if (c.startswith('for ') or c.startswith('thru ') or
+                            c.startswith('while ') or c.startswith('unless ')):
+                            s = self.modify_output(s[:i], remove_retrun = False)
+                        else:
+                            s = self.modify_output(s[i + r.end():])
                         l_output = len(s)
                         if not replace:
                             s = '/* ' + r.group(0) + ': */\n' + s
@@ -483,11 +487,13 @@ class Maxima(object):
         self.last_input = '/* ' + self.last_input.strip() + ': */'
         return outputs, l_output # l_output is used for selection range in a display
 
-    def modify_output(self, s):
+    def modify_output(self, s, remove_retrun = True):
         debug = False
         if debug:
             print('modify_output 0 = "{}"'.format(s))
-        s = re.sub(r'  +', ' ', re.sub(r' *\n *', '', s)).replace(' . ', '.').strip()
+        if remove_retrun:
+            s = re.sub(r' *\n *', '', s)
+        s = re.sub(r'  +', ' ', s).replace(' . ', '.').strip()
         if debug:
             print('modify_output 1 = "{}"'.format(s))
         m = ''
