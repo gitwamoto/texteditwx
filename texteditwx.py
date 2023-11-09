@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2023/11/8 6:26:26 PM
+# 2023/11/9 1:28:07 PM
 
-version = '2023/11/8 6:26:26 PM'
+version = '2023/11/9 1:28:07 PM'
 
 import sys
 
@@ -366,12 +366,10 @@ class Maxima(object):
                 if r.group() == ':lisp ':
                     r = commands.find(';')
                     if r != -1:
-                        c = commands[:r + 1].strip()
-                        self.commands_list.append(c)
+                        self.commands_list.append(commands[:r + 1].strip())
                         commands = commands[r + 1:]
                     else:
-                        c = commands.strip() + ';'
-                        self.commands_list.append(c)
+                        self.commands_list.append(commands.strip() + ';')
                         break
                 else:
                     c = commands[:r.end()].strip()
@@ -428,7 +426,16 @@ class Maxima(object):
                         break
                     else:
                         i -= 1
-                if r:
+                if re.match(r'(?:for|thru|while|unless) |(?:s?print|printf) *\(', c):
+                    if r:
+                        t = s[i + r.end():]
+                        s = self.modify_output(s[:i], remove_spaces = False,)
+                        if not replace:
+                            s += '\n\n/* ' + r.group(0) + ': */\n' + self.modify_output(t)
+                    else:
+                        s = self.modify_output(s, remove_spaces = False)
+                    l_output = len(s)
+                elif r:
                     if c.startswith('? ') or self.in_help:
                         l_output = 0
                         s = '/* HELP: */\n' + s[:i].rstrip()
@@ -438,11 +445,7 @@ class Maxima(object):
                         l_output = 0
                         s = '/* EXAMPLE: */\n' + s[:i].rstrip()
                     else:
-                        if (c.startswith('for ') or c.startswith('thru ') or
-                            c.startswith('while ') or c.startswith('unless ')):
-                            s = self.modify_output(s[:i], remove_retrun = False)
-                        else:
-                            s = self.modify_output(s[i + r.end():])
+                        s = self.modify_output(s[i + r.end():])
                         l_output = len(s)
                         if not replace:
                             s = '/* ' + r.group(0) + ': */\n' + s
@@ -487,13 +490,15 @@ class Maxima(object):
         self.last_input = '/* ' + self.last_input.strip() + ': */'
         return outputs, l_output # l_output is used for selection range in a display
 
-    def modify_output(self, s, remove_retrun = True):
+    def modify_output(self, s, remove_spaces = True):
         debug = False
         if debug:
             print('modify_output 0 = "{}"'.format(s))
-        if remove_retrun:
+        if remove_spaces:
             s = re.sub(r' *\n *', '', s)
-        s = re.sub(r'  +', ' ', s).replace(' . ', '.').strip()
+        s = re.sub(r'  +', ' ', s).replace(' . ', '.')
+        if remove_spaces:
+            s = s.strip()
         if debug:
             print('modify_output 1 = "{}"'.format(s))
         m = ''
@@ -605,6 +610,11 @@ class MyTextCtrl(wx.TextCtrl):
         u'float(expr)',
         u'floor(x)',
         u'forget(x > 0, ...)$',
+        u'for variable: initial_value step increment thru limit do (body, ...)',
+        u'for variable: initial_value step increment while condition do (body, ...)',
+        u'for variable: initial_value step increment unless condition do (body, ...)',
+        u'for variable in [list] do (body, ...)',
+        u'for variable in [list] do (body, ...)',
         u'fpprec: digits$',
         u"ic1(ode2('diff(y, x) ..., y, x), x = x0, y = y0)",
         u"ic2(ode2('diff(y, x) ..., y, x), x = x0, y = y0, 'diff(y, x) = dy0)",
@@ -625,6 +635,7 @@ class MyTextCtrl(wx.TextCtrl):
         u'mod(x, y)',
         u'multthru(expr)',
         u'multthru(x, expr)',
+        u'newline()',
         u"ode2('diff(y, x) ..., y, x)",
         u"ode2('diff(y, x) ..., y, x); bc2(%, x = x1, y = y1, x = x2, y = y2)",
         u"ode2('diff(y, x) ..., y, x); ic1(%, x = x0, y = y0)",
@@ -637,6 +648,8 @@ class MyTextCtrl(wx.TextCtrl):
             u'[legend, "series 1"], [xlabel, "x"], [ylabel, "y"], [y, y_min, y_max])$',
         u'plot2d(discrete, [x_0, y_0], [x_1, y_1], [x, x_min, x_max], [style, points], [color, red], ' +
             u'[legend, "series 1"], [xlabel, "x"], [ylabel, "y"], [y, y_min, y_max])$',
+        u'print(expr_1, ..., expr_n)',
+        u'printf(true, "string", expr_1, ..., expr_n) /* format example: ~d~t~3,1e~t~g~% */',
         u'product(expr, i, i_0, i_1)',
         u'product(expr, i, i_0, i_1), simpproduct',
         u'rat(expr, x_1, ...)',
@@ -650,6 +663,7 @@ class MyTextCtrl(wx.TextCtrl):
         u'sinh(x)',
         u'solve(expr, x)',
         u'solve([eqn_1, ...], [x_1, ...])',
+        u'sprint(expr_1, ..., expr_n) /* in one line */',
         u'sqrt(x)',
         u'subst(a, x, expr)',
         u'sum(expr, i, i_0, i_1)',
@@ -657,9 +671,12 @@ class MyTextCtrl(wx.TextCtrl):
         u'tan(x)',
         u'tanh(x)',
         u'taylor(expr, x, a, n)',
+        u'thru count do (body, ...)',
         u'trigexpand(expr)',
         u'trigsimp(expr)',
         u'transpose(matrix)',
+        u'unless  unless condition do (body, ...)',
+        u'while condition do (body, ...)',
     )
 
     def __init__(self, parent, id = wx.ID_ANY, value = wx.EmptyString, pos = wx.DefaultPosition,
