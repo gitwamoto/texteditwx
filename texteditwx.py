@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2023/11/14 9:25:14 PM
+# 2023/11/14 9:31:35 PM
 
-version = '2023/11/9 1:28:07 PM'
+version = '2023/11/14 9:31:35 PM'
 
 import sys
 
@@ -426,7 +426,7 @@ class Maxima(object):
                         break
                     else:
                         i -= 1
-                if re.match(r'(?:for|thru|while|unless) |(?:s?print|printf) *\(', c):
+                if re.match(r'(?:for|thru|while|unless) |(?:s?print|printf|display) *\(', c):
                     if r:
                         t = s[i + r.end():]
                         s = self.modify_output(s[:i], remove_spaces = False,)
