@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2023/11/9 1:28:07 PM
+# 2023/11/14 9:25:14 PM
 
 version = '2023/11/9 1:28:07 PM'
 
@@ -594,6 +594,7 @@ class MyTextCtrl(wx.TextCtrl):
         u'diag([a11, a22, ...]) /* needs load("diag") */',
         u'diff(expr, x)',
         u'diff(expr, x, n)',
+        u'display(expr_1, ..., expr_n)',
         u'eigenvalues(matrix)',
         u'eigenvectors(matrix)',
         u'erf(x)',
