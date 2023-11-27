@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2023/11/14 9:31:35 PM
+# 2023/11/27 6:01:59 PM
 
-version = '2023/11/14 9:31:35 PM'
+version = '2023/11/27 6:01:59 PM'
 
 import sys
 
@@ -616,6 +616,7 @@ class MyTextCtrl(wx.TextCtrl):
         u'for variable: initial_value step increment unless condition do (body, ...)',
         u'for variable in [list] do (body, ...)',
         u'for variable in [list] do (body, ...)',
+        u'fullratsimp(expr)',
         u'fpprec: digits$',
         u"ic1(ode2('diff(y, x) ..., y, x), x = x0, y = y0)",
         u"ic2(ode2('diff(y, x) ..., y, x), x = x0, y = y0, 'diff(y, x) = dy0)",
@@ -653,6 +654,7 @@ class MyTextCtrl(wx.TextCtrl):
         u'printf(true, "string", expr_1, ..., expr_n) /* format example: ~d~t~3,1e~t~g~% */',
         u'product(expr, i, i_0, i_1)',
         u'product(expr, i, i_0, i_1), simpproduct',
+        u'radcan(expr)',
         u'rat(expr, x_1, ...)',
         u'rationalize(expr)',
         u'ratsimp(expr)',
@@ -889,8 +891,8 @@ class MyTextCtrl(wx.TextCtrl):
                 self.insert_shortcut(u'(rat(', u', x))', (8, 9))
                 self.escape_from_shortcut_function(event)
             elif event.GetKeyCode() == ord('S'):
-                #                      0123456789012345678901  2  345
-                self.insert_shortcut(u'(trigsimp(fullratsimp(', u')))', (1, 25))
+                #                      01234567890123456789012345678  9  0123
+                self.insert_shortcut(u'(trigsimp(fullratsimp(radcan(', u'))))', (1, 33))
             elif event.GetKeyCode() == ord('U'):
                 #                      0123456789012  3  45
                 self.insert_shortcut(u'(subst(a, x, ', u'))', (7, 11))
