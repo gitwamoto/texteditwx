@@ -342,7 +342,8 @@ class Maxima(object):
             if sys.platform.startswith('linux') and self.maxima.before.endswith(self.maxima.after):
                 self.maxima.before = self.maxima.before[:-len(self.maxima.after)]
         except:
-            with wx.MessageDialog(None, _(u'{}\nMaximaを再起動します．').format(sys.exc_info()[0]),
+            print(sys.exc_info())
+#            with wx.MessageDialog(None, _(u'{}\nMaximaを再起動します．').format(sys.exc_info()[0]),
                 _(u'例外発生'), style = wx.ICON_ERROR) as md:
                 md.ShowModal()
             if sys.platform == 'win32':
