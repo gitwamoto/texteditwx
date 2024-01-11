@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2024/1/11 7:44:53 PM
+# 2024/1/11 8:04:09 PM
 
-version = '2024/1/11 7:44:53 PM'
+version = '2024/1/11 8:04:09 PM'
 
 import sys
 
@@ -586,6 +586,7 @@ class MyTextCtrl(wx.TextCtrl):
         u'atan2(y, x)',
         u'atvalue(f(x), x = x0, f0)',
         u"bc2(ode2('diff(y, x) ..., y, x), x = x1, y = y1, x = x2, y = y2)",
+        u'binomial(n, k)',
         u'ceiling(x)',
         u'cos(x)',
         u'cosh(x)',
@@ -609,6 +610,7 @@ class MyTextCtrl(wx.TextCtrl):
         u"desolve(['diff(f(x), x) ..., 'diff(g(x), x) ...], [f(x), g(x)])",
         u'factor(expr)',
         u'facts()',
+        u'factorial(n)',
         u'float(expr)',
         u'floor(x)',
         u'forget(x > 0, ...)$',
