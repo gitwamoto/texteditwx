@@ -4,7 +4,7 @@
 # by Yukiharu Iwamoto
 # 2024/1/15 11:53:05 AM
 
-version = '2024/1/15 11:53:05 AM
+version = '2024/1/15 11:53:05 AM'
 
 import sys
 
