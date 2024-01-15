@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2024/1/11 8:04:09 PM
+# 2024/1/15 11:53:05 AM
 
-version = '2024/1/11 8:04:09 PM'
+version = '2024/1/15 11:53:05 AM
 
 import sys
 
@@ -492,7 +492,7 @@ class Maxima(object):
         return outputs, l_output # l_output is used for selection range in a display
 
     def modify_output(self, s, remove_spaces = True):
-        debug = True
+        debug = False
         if debug:
             print('modify_output 0 = "{}"'.format(s))
         if remove_spaces:
@@ -528,7 +528,7 @@ class Maxima(object):
         m = re.sub(r'(?<!\w)\((-\w+)\)', r'\1', m) # (-a) -> -a
         if debug:
             print('modify_output 3 = "{}"'.format(m))
-        m = re.sub(r"(\b|[\)\]\}]\!)\s*([+\-=]|:=)\s*(\b|[\(\[\{%\-'])", r'\1 \2 \3', m) # a+b-c -> a + b - c
+        m = re.sub(r"(\b|[\)\]\}\!])\s*([+\-=]|:=)\s*(\b|[\(\[\{%\-'])", r'\1 \2 \3', m) # a+b-c -> a + b - c
         if debug:
             print('modify_output 4 = "{}"'.format(m))
         m = re.sub(r'(\d[ebE])\s+([+\-])\s+(\d)', r'\1\2\3', m) # 1.0e + 10 -> 1.0e+10
@@ -624,6 +624,9 @@ class MyTextCtrl(wx.TextCtrl):
         u"ic1(ode2('diff(y, x) ..., y, x), x = x0, y = y0)",
         u"ic2(ode2('diff(y, x) ..., y, x), x = x0, y = y0, 'diff(y, x) = dy0)",
         u'ident(n)',
+        u'if cond_1 then expr_1',
+        u'if cond_1 then expr_1 else expr_0',
+        u'if cond_1 then expr_1 elseif cond_2 then expr_2 elseif ... else expr_0',
         u'inf /* real positive infinity */',
         u'infinity /* complex infinity */',
         u'integrate(expr, x)',
