@@ -13,7 +13,7 @@ texteditwx.pyの上側に書いてある，maxima\_location = の右辺を正し
 
 以下のモジュールをpipでダウンロードして下さい：
 ```
-pip install pip install wxPython==4.1.0 pyperclip requests pexpect zenhan
+pip install wxPython pyperclip requests pexpect zenhan
 ```
 
 texteditwxは[ここ](https://github.com/gitwamoto/texteditwxx)からダウンロードできます．
