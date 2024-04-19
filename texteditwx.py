@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2024/1/15 11:53:05 AM
+# 2024/4/19 3:12:42 PM
 
 version = '2024/1/15 11:53:05 AM'
 
@@ -3283,7 +3283,7 @@ class FrameMain(wx.Frame):
                 _(u'接続エラー'), style = wx.ICON_ERROR) as md:
                 md.ShowModal()
             return
-        r = re.search(b"version\s*=\s*'([0-9/ :APM]+)'\n", s[0])
+        r = re.search(b"version\\s*=\\s*'([0-9/ :APM]+)'\n", s[0])
         if r is not None and time_str_a_is_newer_than_b(a = r.group(1).decode(s[1]), b = version):
             p = correct_file_name_in_unicode(os.path.realpath(decode_if_necessary(__file__)))
             with open(p, 'wb') as f:
