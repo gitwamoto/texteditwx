@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2024/4/19 3:12:42 PM
+# 2024/6/13 9:16:35 AM
 
-version = '2024/4/19 3:12:42 PM'
+version = '2024/6/13 9:16:35 AM'
 
 import sys
 
@@ -430,7 +430,7 @@ class Maxima(object):
                 if re.match(r'(?:for|thru|while|unless) |(?:s?print|printf|display) *\(', c):
                     if r:
                         t = s[i + r.end():]
-                        s = self.modify_output(s[:i], remove_spaces = False,)
+                        s = self.modify_output(s[:i], remove_spaces = False)
                         if not replace:
                             s += '\n\n/* ' + r.group(0) + ': */\n' + self.modify_output(t)
                     else:
@@ -634,6 +634,7 @@ class MyTextCtrl(wx.TextCtrl):
         u'invert(matrix)',
         u'kill(a_1, ...)$',
         u'kill(all)$',
+        u'kron_delta (x1, x2, ...)',
         u'levi_civita([i, j, k]) /* needs load("itensor") */',
         u'limit(expr, x, val)',
         u'matrix([a_11, ...], [a_21, ...])',
