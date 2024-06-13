@@ -634,7 +634,7 @@ class MyTextCtrl(wx.TextCtrl):
         u'invert(matrix)',
         u'kill(a_1, ...)$',
         u'kill(all)$',
-        u'kron_delta (x1, x2, ...)',
+        u'kron_delta(x1, x2, ...)',
         u'levi_civita([i, j, k]) /* needs load("itensor") */',
         u'limit(expr, x, val)',
         u'matrix([a_11, ...], [a_21, ...])',
