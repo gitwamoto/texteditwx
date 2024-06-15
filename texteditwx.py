@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2024/6/13 9:16:35 AM
+# 2024/6/15 4:57:31 PM
 
-version = '2024/6/13 9:16:35 AM'
+version = '2024/6/15 4:57:31 PM'
 
 import sys
 
@@ -649,6 +649,7 @@ class MyTextCtrl(wx.TextCtrl):
         u"ode2('diff(y, x) ..., y, x); bc2(%, x = x1, y = y1, x = x2, y = y2)",
         u"ode2('diff(y, x) ..., y, x); ic1(%, x = x0, y = y0)",
         u"ode2('diff(y, x) ..., y, x); ic2(%, x = x0, y = y0, 'diff(y, x) = dy0)",
+        u'partfrac(expr, x)',
         u'plot2d(f(x), [x, x_min, x_max], [style, lines], [color, red], [legend, "f(x)"], [xlabel, "x"], ' +
             u'[ylabel, "y"], [y, y_min, y_max])$',
         u'plot2d([f(x), g(x)], [x, x_min, x_max], [style, lines], [color, red], [legend, "f(x)", "g(x)"], ' +
