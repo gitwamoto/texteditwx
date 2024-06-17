@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2024/6/17 9:39:13 AM
+# 2024/6/17 2:02:36 PM
 
-version = '2024/6/17 9:39:13 AM'
+version = '2024/6/17 2:02:36 PM'
 
 import sys
 
@@ -3296,11 +3296,35 @@ class FrameMain(wx.Frame):
             with open(p, 'wb') as f:
                 f.write(s[0])
             pd = os.path.dirname(p)
+#            d = os.path.join(pd, u'locale', u'en', u'LC_MESSAGES')
+#            if not os.path.isdir(d):
+#                os.makedirs(d)
+#            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
+#                branch = 'main', file_path = 'locale/en/LC_MESSAGES/messages.mo')
+#            if s is not None:
+#                with open(os.path.join(d, u'messages.mo'), 'wb') as f:
+#                    f.write(s[0])
+#            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
+#                branch = 'main', file_path = 'locale/en/LC_MESSAGES/messages.po')
+#            if s is not None:
+#                with open(os.path.join(d, u'messages.po'), 'wb') as f:
+#                    f.write(s[0])
+#            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
+#                branch = 'main', file_path = 'locale/messages.pot')
+#            if s is not None:
+#                with open(os.path.join(pd, u'locale', u'messages.pot'), 'wb') as f:
+#                    f.write(s[0])
+#            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
+#                branch = 'main', file_path = 'README.md')
+#            if s is not None:
+#                with open(os.path.join(pd, u'README.md'), 'wb') as f:
+#                    f.write(s[0])
             if os.path.isfile(os.path.join(pd, u'modules_needed.txt')):
                 os.remove(os.path.join(pd, u'modules_needed.txt'))
-            with wx.MessageDialog(self, _(u'プログラムを実行し直すとアップデートが有効になります．'),
+            with wx.MessageDialog(self, _(u'アップデートされました．再起動します．'),
                 _(u'アップデート完了'), style = wx.ICON_INFORMATION) as md:
                 md.ShowModal()
+                os.execv(sys.executable, ['python', __file__])
         else:
             with wx.MessageDialog(self, _(u'アップデートの必要はありません．'),
                 _(u'プログラムは最新です．'), style = wx.ICON_INFORMATION) as md:
