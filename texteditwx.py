@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2024/6/15 4:57:31 PM
+# 2024/6/17 9:39:13 AM
 
-version = '2024/6/15 4:57:31 PM'
+version = '2024/6/17 9:39:13 AM'
 
 import sys
 
@@ -565,9 +565,10 @@ class MyTextCtrl(wx.TextCtrl):
     str_wo_shortcut = _(u'Shift+EnterでMaximaコマンドを評価します．上下を空行で挟まれた部分，または選択部分をMaximaコマンドとして解釈します．\n' +
         u'EscキーでMaximaコマンドのショートカットが使えるようになります．')
     str_with_shortcut = _(
-        u'[D]iff: 微分 | [E]xpand: 展開 | [F]actor: 因数分解 | [H]line: 区切り線 | [I]ntegrate: 積分 | f[L]oat: 数値化 | ' +
-        u'[M]ultthru: 先頭を各項にかけて展開 | s[O]lve: 方程式を解く | [P]arenthesis: 丸括弧でくくる | ' +
-        u'ise[Q]ual: 両辺が等しいか | [R]at: 項でまとめる | [S]implify: 簡単化 | s[U]bst: 後で代入 | e[V]: 先に代入\n' +
+        u'p[A]rtfrac: 部分分数分解 | [D]iff: 微分 | [E]xpand: 展開 | [F]actor: 因数分解 | [H]line: 区切り線 | ' +
+        u'[I]ntegrate: 積分 | f[L]oat: 数値化 | [M]ultthru: 先頭を各項にかけて展開 | s[O]lve: 方程式を解く | ' +
+        u'[P]arenthesis: 丸括弧でくくる | ise[Q]ual: 両辺が等しいか | [R]at: 項でまとめる | [S]implify: 簡単化 | ' +
+        u's[U]bst: 後で代入 | e[V]: 先に代入\n' +
         u'Escキーで通常入力に戻ります．')
     completion_expressions = (
         u'%e',
@@ -862,7 +863,11 @@ class MyTextCtrl(wx.TextCtrl):
                     self.unindent(u'\t')
                     return
         if self.shortcut:
-            if event.GetKeyCode() == ord('D'):
+            if event.GetKeyCode() == ord('A'):
+                #                      0123456789  0  12345
+                self.insert_shortcut(u'(partfrac(', u', x))', (13, 14))
+                self.escape_from_shortcut_function(event)
+            elif event.GetKeyCode() == ord('D'):
                 #                      012345  6  78901
                 self.insert_shortcut(u'(diff(', u', x))', (9, 10))
                 self.escape_from_shortcut_function(event)
