@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2024/6/17 2:02:36 PM
+# 2024/6/27 9:04:19 AM
 
-version = '2024/6/17 2:02:36 PM'
+version = '2024/6/27 9:04:19 AM'
 
 import sys
 
@@ -76,11 +76,11 @@ def get_file_from_google_drive(file_id):
             else: # https://github.com/wkentaro/gdown/blob/1bf9e20442a0df57eec3e75a15ef4115dbec9b2f/gdown/download.py#L32
                 m = re.search(b'id="downloadForm" action=".+?&amp;confirm=(.+?)"', r.content)
                 if m:
-                    code = m.group(1)
+                    code = m[1]
                 else:
                     m = re.search(b'&amp;confirm=t&amp;uuid=(.+?)"', r.content)
                     if m:
-                        code = m.group(1)
+                        code = m[1]
             r = requests.get('https://drive.google.com/uc',
                 params = {'export': 'download', 'confirm': code, 'id': file_id}, cookies = cookies)
             if not r.ok:
@@ -432,7 +432,7 @@ class Maxima(object):
                         t = s[i + r.end():]
                         s = self.modify_output(s[:i], remove_spaces = False)
                         if not replace:
-                            s += '\n\n/* ' + r.group(0) + ': */\n' + self.modify_output(t)
+                            s += '\n\n/* ' + r[0] + ': */\n' + self.modify_output(t)
                     else:
                         s = self.modify_output(s, remove_spaces = False)
                     l_output = len(s)
@@ -449,7 +449,7 @@ class Maxima(object):
                         s = self.modify_output(s[i + r.end():])
                         l_output = len(s)
                         if not replace:
-                            s = '/* ' + r.group(0) + ': */\n' + s
+                            s = '/* ' + r[0] + ': */\n' + s
                 elif c.startswith(':lisp '):
                     if not replace:
                         l_output = len(s)
@@ -3291,7 +3291,7 @@ class FrameMain(wx.Frame):
                 md.ShowModal()
             return
         r = re.search(b"version\\s*=\\s*'([0-9/ :APM]+)'\n", s[0])
-        if r is not None and time_str_a_is_newer_than_b(a = r.group(1).decode(s[1]), b = version):
+        if r is not None and time_str_a_is_newer_than_b(a = r[1].decode(s[1]), b = version):
             p = correct_file_name_in_unicode(os.path.realpath(decode_if_necessary(__file__)))
             with open(p, 'wb') as f:
                 f.write(s[0])
