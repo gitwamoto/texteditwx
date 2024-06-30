@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2024/6/27 9:04:19 AM
+# 2024/6/30 4:35:26 PM
 
-version = '2024/6/27 9:04:19 AM'
+version = '2024/6/30 4:35:26 PM'
 
 import sys
 
@@ -525,7 +525,7 @@ class Maxima(object):
             s = s[i + 2:]
         if debug:
             print('modify_output 2 = "{}"'.format(m))
-        m = re.sub(r'(?<!\w)\((-\w+)\)', r'\1', m) # (-a) -> -a
+        m = re.sub(r'(?<!\w|-)\((-\w+)\)', r'\1', m) # (-a) -> -a
         if debug:
             print('modify_output 3 = "{}"'.format(m))
         m = re.sub(r"(\b|[\)\]\}\!])\s*([+\-=]|:=)\s*(\b|[\(\[\{%\-'])", r'\1 \2 \3', m) # a+b-c -> a + b - c
