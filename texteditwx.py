@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2024/6/30 4:35:26 PM
+# 2024/6/30 4:40:11 PM
 
-version = '2024/6/30 4:35:26 PM'
+version = '2024/6/30 4:40:11 PM'
 
 import sys
 
@@ -492,7 +492,7 @@ class Maxima(object):
         return outputs, l_output # l_output is used for selection range in a display
 
     def modify_output(self, s, remove_spaces = True):
-        debug = False
+        debug = True
         if debug:
             print('modify_output 0 = "{}"'.format(s))
         if remove_spaces:
@@ -525,7 +525,7 @@ class Maxima(object):
             s = s[i + 2:]
         if debug:
             print('modify_output 2 = "{}"'.format(m))
-        m = re.sub(r'(?<!\w|-)\((-\w+)\)', r'\1', m) # (-a) -> -a
+        m = re.sub(r'(?<!\w|[-*])\((-\w+)\)', r'\1', m) # (-a) -> -a
         if debug:
             print('modify_output 3 = "{}"'.format(m))
         m = re.sub(r"(\b|[\)\]\}\!])\s*([+\-=]|:=)\s*(\b|[\(\[\{%\-'])", r'\1 \2 \3', m) # a+b-c -> a + b - c
