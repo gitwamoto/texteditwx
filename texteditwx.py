@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2024/7/3 9:34:35 PM
+# 2024/8/5 10:05:01 AM
 
-version = '2024/7/3 9:34:35 PM'
+version = '2024/8/5 10:05:01 AM'
 
 import sys
 
@@ -639,6 +639,7 @@ class MyTextCtrl(wx.TextCtrl):
         u'levi_civita([i, j, k]) /* needs load("itensor") */',
         u'limit(expr, x, val)',
         u'matrix([a_11, ...], [a_21, ...])',
+        u'makelist(expr, i, i_0, i_1)',
         u'max(x_1, ...)',
         u'minf /* real negative infinity */',
         u'min(x_1, ...)',
