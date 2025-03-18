@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2024/11/15 10:21:28 AM
+# 2025/3/18 9:14:21 AM
 
-version = '2024/11/15 10:21:28 AM'
+version = '2025/3/18 9:14:21 AM'
 
 import sys
 
@@ -2496,6 +2496,11 @@ class FrameMain(wx.Frame):
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_P.Append(self.menuItem_OF_prghPressure)
         self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_P, _(u'Pで始まるもの'))
+        self.menu_OF_bc_R = wx.Menu()
+        self.menuItem_OF_rotatingWallVelocity = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'rotatingWallVelocity',
+            wx.EmptyString, wx.ITEM_NORMAL)
+        self.menu_OF_bc_R.Append(self.menuItem_OF_rotatingWallVelocity)
+        self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_R, _(u'Rで始まるもの'))
         self.menu_OF_bc_S = wx.Menu()
         self.menuItem_OF_slip = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'slip',
             wx.EmptyString, wx.ITEM_NORMAL)
@@ -2645,6 +2650,7 @@ class FrameMain(wx.Frame):
         self.Bind(wx.EVT_MENU, self.menuItem_OF_pressureInletOutletVelocityOnMenuSelection,
             id = self.menuItem_OF_pressureInletOutletVelocity.GetId())
         self.Bind(wx.EVT_MENU, self.menuItem_OF_prghPressureOnMenuSelection, id = self.menuItem_OF_prghPressure.GetId())
+        self.Bind(wx.EVT_MENU, self.menuItem_OF_rotatingWallVelocityOnMenuSelection, id = self.menuItem_OF_rotatingWallVelocity.GetId())
         self.Bind(wx.EVT_MENU, self.menuItem_OF_slipOnMenuSelection, id = self.menuItem_OF_slip.GetId())
         self.Bind(wx.EVT_MENU, self.menuItem_OF_surfaceNormalFixedValueOnMenuSelection, id = self.menuItem_OF_surfaceNormalFixedValue.GetId())
         self.Bind(wx.EVT_MENU, self.menuItem_OF_symmetryOnMenuSelection, id = self.menuItem_OF_symmetry.GetId())
@@ -3204,6 +3210,15 @@ class FrameMain(wx.Frame):
             u'rho rhok; // 計算で用いる密度の変数名，rhoまたはrhok\n// pの次元がPaの場合→rho，m^2/s^2にの場合→rhok\n' +
             u'p uniform 0; // 設定したいpの値',
             openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/prghPressure'),
+            indent = '\t'))
+
+    def menuItem_OF_rotatingWallVelocityOnMenuSelection(self, event):
+        self.textCtrl_edit.WriteText(openfoam_bc_template_string(('rotatingWallVelocity',
+            u'速度を回転物体表面の速度と一致させる',
+            u'origin (0 0 0); // 回転中心\n' +
+            u'axis (0 0 1); // 回転軸\n' +
+            u'omega (0 0 1); // 右ねじが進む向きを正とした角速度 [rps]',
+            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/rotatingWallVelocity'),
             indent = '\t'))
 
     def menuItem_OF_slipOnMenuSelection(self, event):
