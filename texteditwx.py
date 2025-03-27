@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/3/18 9:14:21 AM
+# 2025/3/27 9:49:05 AM
 
-version = '2025/3/18 9:14:21 AM'
+version = '2025/3/27 9:49:05 AM'
 
 import sys
 
@@ -1217,7 +1217,7 @@ class MyTextCtrl(wx.TextCtrl):
                 r += re.sub(pattern, repl, s[i[0]:i[1]])
             else:
                 r += s[i[0]:i[1]]
-        self.WriteText(r)
+        return r
 
     def indent(self, indenter = u' '):
         if self.debug:
@@ -2911,8 +2911,10 @@ class FrameMain(wx.Frame):
         self.textCtrl_edit.reset_styles()
 
     def menuItem_insert_returnOnMenuSelection(self, event):
-        self.textCtrl_edit.re_sub_in_top_level('(,|\\+ |\\- |=)\\s*', '\\1\n', parentheses = ((u'(', u')'), (u'{', u'}'), (u'[', u']')),
-            literals = ((u'"', u'"'), (u"'", u"'")), literal_escape = u'\\')
+        self.textCtrl_edit.WriteText(re.sub('^(\\-|\\+)\\n', '\\1',
+            self.textCtrl_edit.re_sub_in_top_level('(,|\\+|\\-|=)\\s*', '\\1\n',
+                parentheses = ((u'(', u')'), (u'{', u'}'), (u'[', u']')),
+                literals = ((u'"', u'"'), (u"'", u"'")), literal_escape = u'\\')))
 
     def menuItem_evaluateOnMenuSelection(self, event):
         self.textCtrl_edit.send_commands_to_maxima()
