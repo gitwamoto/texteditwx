@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/3/27 9:49:05 AM
+# 2025/4/2 5:11:46 PM
 
-version = '2025/3/27 9:49:05 AM'
+version = '2025/4/2 5:11:46 PM'
 
 import sys
 
@@ -2197,72 +2197,72 @@ class FrameMain(wx.Frame):
         self.menubar = wx.MenuBar(0)
 
         self.menu_file = wx.Menu()
-        self.menuItem_open = wx.MenuItem(self.menu_file, wx.ID_ANY, _(u'開く') + u'\tCtrl+O',
+        self.menuItem_open = wx.MenuItem(self.menu_file, wx.ID_ANY, _(u'開く') + '\tCtrl+O',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_file.Append(self.menuItem_open)
         self.menu_file.AppendSeparator()
-        self.menuItem_save = wx.MenuItem(self.menu_file, wx.ID_ANY, _(u'保存') + u'\tCtrl+S',
+        self.menuItem_save = wx.MenuItem(self.menu_file, wx.ID_ANY, _(u'保存') + '\tCtrl+S',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_file.Append(self.menuItem_save)
-        self.menuItem_save_as = wx.MenuItem(self.menu_file, wx.ID_ANY, _(u'別名で保存') + u'\tShift+Ctrl+S',
+        self.menuItem_save_as = wx.MenuItem(self.menu_file, wx.ID_ANY, _(u'別名で保存') + '\tShift+Ctrl+S',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_file.Append(self.menuItem_save_as)
         self.menu_file.AppendSeparator()
-        self.menuItem_quit = wx.MenuItem(self.menu_file, wx.ID_ANY, _(u'終了') + u'\tCtrl+Q',
+        self.menuItem_quit = wx.MenuItem(self.menu_file, wx.ID_ANY, _(u'終了') + '\tCtrl+Q',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_file.Append(self.menuItem_quit)
-        self.menubar.Append(self.menu_file, _(u'ファイル') + u'(&F)')
+        self.menubar.Append(self.menu_file, _(u'ファイル') + '(&F)')
 
         self.menu_edit = wx.Menu()
-        self.menuItem_undo = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'取り消す') + u'\tCtrl+Z',
+        self.menuItem_undo = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'取り消す') + '\tCtrl+Z',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_undo)
-        self.menuItem_redo = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'やり直す') + u'\tShift+Ctrl+Z',
+        self.menuItem_redo = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'やり直す') + '\tShift+Ctrl+Z',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_redo)
         self.menu_edit.AppendSeparator()
-        self.menuItem_cut = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'カット') + u'\tCtrl+X',
+        self.menuItem_cut = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'カット') + '\tCtrl+X',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_cut)
-        self.menuItem_copy = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'コピー') + u'\tCtrl+C',
+        self.menuItem_copy = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'コピー') + '\tCtrl+C',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_copy)
-        self.menuItem_paste = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'ペースト') + u'\tCtrl+V',
+        self.menuItem_paste = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'ペースト') + '\tCtrl+V',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_paste)
-        self.menuItem_select_all = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'全てを選択') + u'\tCtrl+A',
+        self.menuItem_select_all = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'全てを選択') + '\tCtrl+A',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_select_all)
         self.menu_edit.AppendSeparator()
-        self.menuItem_find = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'検索/置換') + u'\tCtrl+F',
+        self.menuItem_find = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'検索/置換') + '\tCtrl+F',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_find)
-        self.menuItem_find_next = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'次を検索') + u'\tCtrl+G',
+        self.menuItem_find_next = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'次を検索') + '\tCtrl+G',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_find_next)
-        self.menuItem_find_prev = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'前を検索') + u'\tShift+Ctrl+G',
+        self.menuItem_find_prev = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'前を検索') + '\tShift+Ctrl+G',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_find_prev)
-        self.menuItem_replace = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'置換') + u'\tCtrl+=',
+        self.menuItem_replace = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'置換') + '\tCtrl+=',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_replace)
-        self.menuItem_rep_find = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'置換&&次を検索') + u'\tCtrl+L',
+        self.menuItem_rep_find = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'置換&&次を検索') + '\tCtrl+L',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_rep_find)
         self.menuItem_rep_all = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'全てを置換'),
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_rep_all)
-        self.menuItem_append_find = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'選択部分を検索に追加') + u'\tCtrl+E',
+        self.menuItem_append_find = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'選択部分を検索に追加') + '\tCtrl+E',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_append_find)
-        self.menuItem_append_replace = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'選択部分を置換に追加') + u'\tShift+Ctrl+E',
+        self.menuItem_append_replace = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'選択部分を置換に追加') + '\tShift+Ctrl+E',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_append_replace)
         self.menu_edit.AppendSeparator()
-        self.menuItem_left_shift = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'左端1文字を削除') + u'\tCtrl+[',
+        self.menuItem_left_shift = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'左端1文字を削除') + '\tCtrl+[',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_left_shift)
-        self.menuItem_right_shift = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'左端に文字を追加') + u'\tCtrl+]',
+        self.menuItem_right_shift = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'左端に文字を追加') + '\tCtrl+]',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_right_shift)
         self.menu_edit.AppendSeparator()
@@ -2297,14 +2297,14 @@ class FrameMain(wx.Frame):
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menu_line_numbered)
         self.menu_edit.AppendSeparator()
-        self.menuItem_bracket = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'括弧でくくられた部分を選択') + u'\tCtrl+B',
+        self.menuItem_bracket = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'括弧でくくられた部分を選択') + '\tCtrl+B',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_bracket)
         self.menu_edit.AppendSeparator()
-        self.menuItem_completion = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'補完') + u'\tShift+Space',
+        self.menuItem_completion = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'補完') + '\tShift+Space',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_completion)
-        self.menuItem_completion_backward = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'前の補完候補') + u'\tShift+Esc',
+        self.menuItem_completion_backward = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'前の補完候補') + '\tShift+Esc',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_completion_backward)
         self.menu_edit.AppendSeparator()
@@ -2312,81 +2312,83 @@ class FrameMain(wx.Frame):
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_datetime)
         self.menu_edit.AppendSeparator()
-        self.menuItem_colorize_texts = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'文字に色をつける') + u'\tCtrl+D',
+        self.menuItem_colorize_texts = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'文字に色をつける') + '\tCtrl+D',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_colorize_texts)
-        self.menuItem_reset_styles = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'文字色をリセット') + u'\tShift+Ctrl+D',
+        self.menuItem_reset_styles = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'文字色をリセット') + '\tShift+Ctrl+D',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_reset_styles)
         self.menu_edit.AppendSeparator()
-        self.menuItem_insert_return = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u',+-=の後で改行する') + u'\tCtrl+@',
+        self.menuItem_insert_return = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u',+-=の後で改行する') + '\tCtrl+' +
+            # MacOS Venturaで，@がShift+2に変換されてしまう問題の対処
+            ('`' if sys.platform == 'darwin' and int(platform.mac_ver()[0].split('.')[0]) >= 13 else '@'),
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_insert_return)
-        self.menubar.Append(self.menu_edit, _(u'編集') + u'(&E)')
+        self.menubar.Append(self.menu_edit, _(u'編集') + '(&E)')
 
         self.menu_maxima = wx.Menu()
-        self.menuItem_evaluate = wx.MenuItem(self.menu_maxima, wx.ID_ANY, _(u'評価') + u'\tShift+Enter',
+        self.menuItem_evaluate = wx.MenuItem(self.menu_maxima, wx.ID_ANY, _(u'評価') + '\tShift+Enter',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_maxima.Append(self.menuItem_evaluate)
         self.menu_maxima.AppendSeparator()
-        self.menuItem_negative = wx.MenuItem(self.menu_maxima, wx.ID_ANY, _(u'選択部分に-1をかける') + u'\tCtrl+-',
+        self.menuItem_negative = wx.MenuItem(self.menu_maxima, wx.ID_ANY, _(u'選択部分に-1をかける') + '\tCtrl+-',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_maxima.Append(self.menuItem_negative)
-        self.menuItem_reciprocal = wx.MenuItem(self.menu_maxima, wx.ID_ANY, _(u'選択部分を逆数にする') + u'\tCtrl+~',
+        self.menuItem_reciprocal = wx.MenuItem(self.menu_maxima, wx.ID_ANY, _(u'選択部分を逆数にする') + '\tCtrl+~',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_maxima.Append(self.menuItem_reciprocal)
-        self.menuItem_exchange_hands = wx.MenuItem(self.menu_maxima, wx.ID_ANY, _(u'選択部分の右辺と左辺を入れ替える') + u'\tCtrl+|',
+        self.menuItem_exchange_hands = wx.MenuItem(self.menu_maxima, wx.ID_ANY, _(u'選択部分の右辺と左辺を入れ替える') + '\tCtrl+|',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_maxima.Append(self.menuItem_exchange_hands)
-        self.menuItem_declare_integer = wx.MenuItem(self.menu_maxima, wx.ID_ANY, _(u'選択部分を整数であると仮定する') + u'\tCtrl+I',
+        self.menuItem_declare_integer = wx.MenuItem(self.menu_maxima, wx.ID_ANY, _(u'選択部分を整数であると仮定する') + '\tCtrl+I',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_maxima.Append(self.menuItem_declare_integer)
         self.menu_maxima.AppendSeparator()
         self.menuItem_command_shortcut = wx.MenuItem(self.menu_maxima, wx.ID_ANY,
-            self.textCtrl_edit.str_menu_with_shortcut + u'\tEsc', wx.EmptyString, wx.ITEM_NORMAL)
+            self.textCtrl_edit.str_menu_with_shortcut + '\tEsc', wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_maxima.Append(self.menuItem_command_shortcut)
         self.menu_maxima.AppendSeparator()
         self.menuItem_reset_maxima = wx.MenuItem(self.menu_maxima, wx.ID_ANY, _(u'リセット'),
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_maxima.Append(self.menuItem_reset_maxima)
-        self.menubar.Append(self.menu_maxima, u'Maxima')
+        self.menubar.Append(self.menu_maxima, 'Maxima(&M)')
 
         self.menu_python = wx.Menu()
         self.menuItem_python_header = wx.MenuItem(self.menu_python, wx.ID_ANY, _(u'シバンを挿入'),
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_python.Append(self.menuItem_python_header)
         self.menu_python.AppendSeparator()
-        self.menuItem_python_indent = wx.MenuItem(self.menu_python, wx.ID_ANY, _(u'字下げ') + u'\tCtrl+Right',
+        self.menuItem_python_indent = wx.MenuItem(self.menu_python, wx.ID_ANY, _(u'字下げ') + '\tCtrl+Right',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_python.Append(self.menuItem_python_indent)
-        self.menuItem_python_unindent = wx.MenuItem(self.menu_python, wx.ID_ANY, _(u'字上げ') + u'\tCtrl+Left',
+        self.menuItem_python_unindent = wx.MenuItem(self.menu_python, wx.ID_ANY, _(u'字上げ') + '\tCtrl+Left',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_python.Append(self.menuItem_python_unindent)
         self.menu_python.AppendSeparator()
-        self.menuItem_python_comment = wx.MenuItem(self.menu_python, wx.ID_ANY, _(u'コメントアウト') + u'\tCtrl+3',
+        self.menuItem_python_comment = wx.MenuItem(self.menu_python, wx.ID_ANY, _(u'コメントアウト') + '\tCtrl+3',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_python.Append(self.menuItem_python_comment)
-        self.menuItem_python_uncomment = wx.MenuItem(self.menu_python, wx.ID_ANY, _(u'アンコメント') + u'\tCtrl+2',
+        self.menuItem_python_uncomment = wx.MenuItem(self.menu_python, wx.ID_ANY, _(u'アンコメント') + '\tCtrl+2',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_python.Append(self.menuItem_python_uncomment)
         self.menu_python.AppendSeparator()
         self.menuItem_leading_tab_to_space = wx.MenuItem(self.menu_python, wx.ID_ANY, _(u'左端のタブを半角スペース4個に変換'),
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_python.Append(self.menuItem_leading_tab_to_space)
-        self.menubar.Append(self.menu_python, u'Python')
+        self.menubar.Append(self.menu_python, 'Python(&P)')
 
         self.menu_OF = wx.Menu()
-        self.menuItem_OF_indent = wx.MenuItem(self.menu_OF, wx.ID_ANY, _(u'字下げ') + u'\tCtrl+Down',
+        self.menuItem_OF_indent = wx.MenuItem(self.menu_OF, wx.ID_ANY, _(u'字下げ') + '\tCtrl+Down',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF.Append(self.menuItem_OF_indent)
-        self.menuItem_OF_unindent = wx.MenuItem(self.menu_OF, wx.ID_ANY, _(u'字上げ') + u'\tCtrl+Up',
+        self.menuItem_OF_unindent = wx.MenuItem(self.menu_OF, wx.ID_ANY, _(u'字上げ') + '\tCtrl+Up',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF.Append(self.menuItem_OF_unindent)
         self.menu_OF.AppendSeparator()
-        self.menuItem_OF_comment = wx.MenuItem(self.menu_OF, wx.ID_ANY, _(u'コメントアウト') + u'\tCtrl+5',
+        self.menuItem_OF_comment = wx.MenuItem(self.menu_OF, wx.ID_ANY, _(u'コメントアウト') + '\tCtrl+5',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF.Append(self.menuItem_OF_comment)
-        self.menuItem_OF_uncomment = wx.MenuItem(self.menu_OF, wx.ID_ANY, _(u'アンコメント') + u'\tCtrl+4',
+        self.menuItem_OF_uncomment = wx.MenuItem(self.menu_OF, wx.ID_ANY, _(u'アンコメント') + '\tCtrl+4',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF.Append(self.menuItem_OF_uncomment)
         self.menu_OF.AppendSeparator()
@@ -2540,14 +2542,14 @@ class FrameMain(wx.Frame):
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_Z.Append(self.menuItem_OF_zeroGradient)
         self.menu_OF.AppendSubMenu(self.menu_OF_bc, _(u'境界条件の雛形'))
-        self.menubar.Append(self.menu_OF, u'OpenFOAM')
+        self.menubar.Append(self.menu_OF, 'OpenFOAM(&O)')
 
         self.menu_help = wx.Menu()
         self.menuItem_update = wx.MenuItem(self.menu_help, wx.ID_ANY, _(u'アップデート'), wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_help.Append(self.menuItem_update)
         self.menuItem_movie = wx.MenuItem(self.menu_help, wx.ID_ANY, _(u'使い方の動画'), wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_help.Append(self.menuItem_movie)
-        self.menubar.Append(self.menu_help, _(u'ヘルプ') + u'(&H)')
+        self.menubar.Append(self.menu_help, _(u'ヘルプ') + '(&H)')
 
         self.SetMenuBar(self.menubar)
 
@@ -2734,13 +2736,13 @@ class FrameMain(wx.Frame):
         self.textCtrl_edit.plus(self.textCtrl_affect.GetValue())
 
     def button_minusOnButtonClick(self, event):
-        self.textCtrl_edit.plus(u'-(' + self.textCtrl_affect.GetValue() + u')')
+        self.textCtrl_edit.plus('-(' + self.textCtrl_affect.GetValue() + ')')
 
     def button_multiplyOnButtonClick(self, event):
         self.textCtrl_edit.multiply(self.textCtrl_affect.GetValue())
 
     def button_divideOnButtonClick(self, event):
-        self.textCtrl_edit.multiply(u'1/(' + self.textCtrl_affect.GetValue() + u')')
+        self.textCtrl_edit.multiply('1/(' + self.textCtrl_affect.GetValue() + ')')
 
     def button_powerOnButtonClick(self, event):
         self.textCtrl_edit.power(self.textCtrl_affect.GetValue())
@@ -2935,11 +2937,11 @@ class FrameMain(wx.Frame):
         if self.textCtrl_edit.shortcut:
             self.textCtrl_edit.shortcut = False
             self.textCtrl_help.SetValue(self.textCtrl_edit.str_wo_shortcut)
-            self.menuItem_command_shortcut.SetItemLabel(self.textCtrl_edit.str_menu_with_shortcut + u'\tEsc')
+            self.menuItem_command_shortcut.SetItemLabel(self.textCtrl_edit.str_menu_with_shortcut + '\tEsc')
         else:
             self.textCtrl_edit.shortcut = True
             self.textCtrl_help.SetValue(self.textCtrl_edit.str_with_shortcut)
-            self.menuItem_command_shortcut.SetItemLabel(self.textCtrl_edit.str_menu_wo_shortcut + u'\tEsc')
+            self.menuItem_command_shortcut.SetItemLabel(self.textCtrl_edit.str_menu_wo_shortcut + '\tEsc')
 
     def menuItem_reset_maximaOnMenuSelection(self, event):
         self.textCtrl_edit.reset_maxima()
