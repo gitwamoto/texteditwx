@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/4/2 5:11:46 PM
+# 2025/4/9 8:00:46 PM
 
-version = '2025/4/2 5:11:46 PM'
+version = '2025/4/9 8:00:46 PM'
 
 import sys
 
@@ -282,6 +282,29 @@ def line_numbered_str(s, head = True, prefix = '', suffix = ': '):
         s = s[:-len(r)]
     return s
 
+def resub_outside(pattern, repl, string, inside_pattern = r'"(\\.|[^"])*"'):
+    # r'"(\\.|[^"])*"' -> string enclosed in double quotes
+    if not isinstance(pattern, (list, tuple)):
+        pattern = (pattern,)
+    if not isinstance(repl, (list, tuple)):
+        repl = (repl,)
+    s = ''
+    while len(string) > 0:
+        m = re.search(inside_pattern, string) # string which allows escape characters
+        if m:
+            t = string[:m.start()]
+            for p, r in zip(pattern, repl):
+                t = re.sub(p, r, t)
+            s += t + m[0]
+            string = string[m.end():]
+        else:
+            t = string
+            for p, r in zip(pattern, repl):
+                t = re.sub(p, r, t)
+            s += t
+            break
+    return s
+
 openfoam_src = 'https://develop.openfoam.com/Development/openfoam/tree/maintenance-v2106/src/'
 
 def openfoam_bc_template_string(bc, indent = '', include_src_url = False):
@@ -355,6 +378,8 @@ class Maxima(object):
 
     def send_commands(self, commands, replace = False):
         debug = False
+        if debug:
+            print('send_commands')
         if len(self.commands_list) > 0:
             commands_list_remain = self.commands_list
             self.commands_list = []
@@ -387,20 +412,21 @@ class Maxima(object):
         if commands_list_remain is not None:
             self.commands_list.extend(commands_list_remain)
         if debug:
-            print('commands_list = {}'.format(self.commands_list))
+            print('    commands_list = {}'.format(self.commands_list))
         outputs = []
         while len(self.commands_list) > 0:
             c = self.commands_list.pop(0)
             self.maxima.sendline(c)
             if debug:
-                print('----------\nc = "{}"'.format(c))
+                print('    ----------')
+                print('    command = "{}"'.format(c))
             try:
                 self.expect(r"(\(%i\d+\)|Enter space-separated numbers, `all' or `none':|.+\?)\s*$")
             except:
                 raise
             if debug:
-                print('before = "{}"'.format(self.maxima.before))
-                print('after = "{}"'.format(self.maxima.after))
+                print('    before = "{}"'.format(self.maxima.before))
+                print('    after = "{}"'.format(self.maxima.after))
             if self.maxima.after.startswith('(%i'):
                 self.last_input = self.maxima.after
                 s = self.maxima.before[self.maxima.before.find('\n') + 1:].lstrip('\n').rstrip()
@@ -408,7 +434,7 @@ class Maxima(object):
                     self.expect(r'\(%i\d+\)')
                     s = self.maxima.before[self.maxima.before.find('\n') + 1:].lstrip('\n').rstrip()
                 if debug:
-                    print('s = "{}"'.format(s))
+                    print('    s = "{}"'.format(s))
                 if c.endswith('$') and (s == '' or s.startswith('(%i') or s.endswith('$')):
                     if ('incorrect syntax: ' in s or s.endswith(' -- an error. To debug this try: debugmode(true);') or
                         'Maxima encountered a Lisp error: ' in s):
@@ -427,16 +453,16 @@ class Maxima(object):
                         break
                     else:
                         i -= 1
-                if re.match(r'(?:for|thru|while|unless) |(?:s?print|printf|display) *\(', c):
-                    if r:
+                if re.match(r'(for|thru|while|unless) |(s?print|printf|display) *\(', c):
+                    if r: # re.match(r'\(%o\d+\)', s[i:])
                         t = s[i + r.end():]
-                        s = self.modify_output(s[:i], remove_spaces = False)
+                        s = self.modify_output(s[:i], remove_new_lines = False)
                         if not replace:
                             s += '\n\n/* ' + r[0] + ': */\n' + self.modify_output(t)
                     else:
-                        s = self.modify_output(s, remove_spaces = False)
+                        s = self.modify_output(s, remove_new_lines = False)
                     l_output = len(s)
-                elif r:
+                elif r: # re.match(r'\(%o\d+\)', s[i:])
                     if c.startswith('? ') or self.in_help:
                         l_output = 0
                         s = '/* HELP: */\n' + s[:i].rstrip()
@@ -471,7 +497,8 @@ class Maxima(object):
                     l_output = 0
                     continue
                 if debug:
-                    print('outputs = "{}"\n----------'.format(s))
+                    print('    outputs = "{}"'.format(s))
+                    print('    ----------')
                 outputs.append(s)
             elif self.maxima.after.startswith("Enter space-separated numbers, `all' or `none':"):
                 # example: ?? plot
@@ -491,53 +518,128 @@ class Maxima(object):
         self.last_input = '/* ' + self.last_input.strip() + ': */'
         return outputs, l_output # l_output is used for selection range in a display
 
-    def modify_output(self, s, remove_spaces = True):
+    @staticmethod
+    def remove_redundant_parentheses(s):
+        debug = False
+        if debug:
+            print('remove_redundant_parentheses')
+            print('    initial string = "{}"'.format(s))
+        priority = {
+            'initial value': 1000,
+            '!!': 100,
+            '!':   90, # a!!! = (a!!)!
+            '^^':  80, # a^^b! = a^^(b!)
+            '^':   80, # a^b! = a^(b!)
+            '**':  80, # a**b! = a**(b!)
+            '.':   70, # a.b^c = a.(b^c)
+            '/':   60, # a/b.c = a/(b.c)
+            '*':   59, # a*b.c = a*(b.c), conversion (a*b)/c = a*b/c is done by adding another condition
+            '+':   50, # a + b*c = a + (b*c)
+            '-':   50, # a + b*c = a + (b*c)
+            }
+        if len(s) == 0:
+            return '', 0, ''
+        if s[0] == '-':
+            min_priority = last_priority = priority['*']
+            r = '-'
+            s = s[1:]
+        else:
+            min_priority = last_priority = priority['initial value']
+            r = ''
+        while len(s) > 0:
+            if debug:
+                print('    while, s = "{}"'.format(s))
+            #                1        1   2                                  2 3                      3
+            m = re.search(r'"(\\.|[^"])*"|(!!?|\^\^?|\*\*?|\.(?![0-9])|[/+\-])|([_A-Za-z][_A-Za-z0-9]*)?\(|\)', s)
+            if m:
+                if m[1]: # string enclosed in double quotes:
+                    r += s[:m.end()]
+                    s = s[m.end():]
+                    if debug:
+                        print('    skip string, r = "{}"'.format(r))
+                elif m[2]: # operator
+                    last_priority = priority[m[2]]
+                    if min_priority > last_priority:
+                        min_priority = last_priority
+                    r += s[:m.end()]
+                    s = s[m.end():]
+                    if debug:
+                        print('    operator {}, last_priority = {}, min_priority = {}'.format(
+                            m[2], last_priority, min_priority))
+                elif m[0] == '(':
+                    r += s[:m.end() - 1] # string before '('
+                    if debug:
+                        print('    (')
+                        print('        r = "{}"'.format(r))
+                    inside, inside_priority, remainder = Maxima.remove_redundant_parentheses(s[m.end():])
+                    if debug:
+                        print('        inside = "{}", inside_priority = {}, remainder = "{}"'.format(
+                            inside, inside_priority, remainder))
+                    m = re.match(r'!!?|\^\^?|\*\*?|\.(?![0-9])|[/+\-]', remainder)
+                    if m:
+                        if debug:
+                            print('        following operator = "{}"'.format(m[0]))
+                        if (last_priority <= inside_priority and priority[m[0]] <= inside_priority or
+                            inside_priority == priority['*'] and m[0] == '/'): # conversion (a*b)/c = a*b/c is done here
+                            r += inside + remainder[:m.end()]
+                        else:
+                            r += '(' + inside + ')' + remainder[:m.end()]
+                        last_priority = priority[m[0]]
+                        if min_priority > last_priority:
+                            min_priority = last_priority
+                        s = remainder[m.end():]
+                    else: # no operator follows after a closing parenthesis
+                        if debug:
+                            print('        no following operator')
+                        if last_priority <= inside_priority:
+                            r += inside
+                        else:
+                            r += '(' + inside + ')'
+                        s = remainder
+                    if debug:
+                        print('        r = "{}", last_priority = {}, min_priority = "{}"'.format(
+                            r, last_priority, min_priority))
+                elif m[0] == ')':
+                    r += s[:m.end() - 1] # string before ')'
+                    if debug:
+                        print('    ), return, r = "{}", min_priority = {}, remainder = "{}"'.format(
+                            r, min_priority, s[m.end():]))
+                    return r, min_priority, s[m.end():]
+                else: # function
+                    if debug:
+                        print('    function = "{}", '.format(m[3]))
+                    r += s[:m.end()]
+                    inside, _, s =  Maxima.remove_redundant_parentheses(s[m.end():])
+                    r += inside + ')'
+                    if debug:
+                        print('    function, r = "{}", '.format(r))
+            else:
+                r += s
+                if debug:
+                    print('    no operator/function/(, r = "{}"'.format(r))
+                break
+        if debug:
+            print('    return, r = "{}", min_priority = {}'.format(r, min_priority))
+        return r, min_priority, ''
+
+    def modify_output(self, s, remove_new_lines = True):
         debug = False
         if debug:
             print('modify_output 0 = "{}"'.format(s))
-        if remove_spaces:
-            s = re.sub(r' *\n *', '', s)
-        s = re.sub(r'  +', ' ', s).replace(' . ', '.')
-        if remove_spaces:
-            s = s.strip()
+        if remove_new_lines:
+            # r'"(\\.|[^"])*"' -> string enclosed in double quotes
+            s = resub_outside(r' *\n *', '', s, r'"(\\.|[^"])*"').strip()
+        # remove spaces, 'func( -> func(
+        s = resub_outside((' ', r"'?([_A-Za-z][_A-Za-z0-9]*)\("), ('',  r'\1('), s, r'"(\\.|[^"])*"')
         if debug:
             print('modify_output 1 = "{}"'.format(s))
-        m = ''
-        while True:
-            i = s.find(')/')
-            if i == -1:
-                m += s
-                break
-            r = str_range_between(s, (i, i), (('(', ')'),))
-            if r is None or re.search(r'\w\s*', s[:r[0]]):
-                # re.search(r'\w\s*', s[:r[0]]) -> function name followed by parenthesis
-                m += s[:i + 2]
-            else:
-                remove_parenthesis = False
-                for l in str_levels(s[r[0] + 1:r[1] - 1], (('(', ')'),)):
-                    if l[2] == 0 and re.search('[+-]', s[r[0] + 1 + l[0]:r[0] + 1 + l[1]]):
-                        remove_parenthesis = True
-                        break
-                if remove_parenthesis:
-                    m += s[:i + 2]
-                else:
-                    m += s[:r[0]] + s[r[0] + 1:r[1] - 1] + s[r[1]:i + 2]
-            s = s[i + 2:]
+        s = self.remove_redundant_parentheses(s)[0]
         if debug:
-            print('modify_output 2 = "{}"'.format(m))
-        m = re.sub(r'(?<!\w|[-*])\((-\w+)\)(?!\^)', r'\1', m) # (-a) -> -a
+            print('modify_output 2 = "{}"'.format(s))
+        s = resub_outside((r'([^(])-([^0-9])', r'\+', ','), (r'\1 - \2', ' + ', ', '), s, r'"(\\.|[^"])*"')
         if debug:
-            print('modify_output 3 = "{}"'.format(m))
-        m = re.sub(r"(\b|[\)\]\}\!])\s*([+\-=]|:=)\s*(\b|[\(\[\{%\-'])", r'\1 \2 \3', m) # a+b-c -> a + b - c
-        if debug:
-            print('modify_output 4 = "{}"'.format(m))
-        m = re.sub(r'(\d[ebE])\s+([+\-])\s+(\d)', r'\1\2\3', m) # 1.0e + 10 -> 1.0e+10
-        if debug:
-            print('modify_output 5 = "{}"'.format(m))
-        m = re.sub(r'(,)\s*', r'\1 ', m) # a,b,c -> a, b, c
-        if debug:
-            print('modify_output 6 = "{}"'.format(m))
-        return m
+            print('modify_output 3 = "{}"'.format(s))
+        return s
 
     def __del__(self):
         try:
@@ -571,125 +673,125 @@ class MyTextCtrl(wx.TextCtrl):
         u's[U]bst: 後で代入 | e[V]: 先に代入\n' +
         u'Escキーで通常入力に戻ります．')
     completion_expressions = (
-        u'%e',
-        u'%gamma',
-        u'%i',
-        u'%pi',
-        u':lisp $%;',
-        u'abs(x)',
-        u'acos(x)',
-        u'acosh(x)',
-        u'asin(x)',
-        u'asinh(x)',
-        u'assume(x > 0, ...)$ /* <-> forget(x > 0, ...)$ */ facts();',
-        u'atan(x)',
-        u'atanh(x)',
-        u'atan2(y, x)',
-        u'atvalue(f(x), x = x0, f0)',
-        u"bc2(ode2('diff(y, x) ..., y, x), x = x1, y = y1, x = x2, y = y2)",
-        u'binomial(n, k)',
-        u'ceiling(x)',
-        u'cos(x)',
-        u'cosh(x)',
-        u'determinant(matrix)',
-        u'depends(f_1, x_1, ..., [f_n, g_n], [x_n, y_n])',
-        u'dependencies',
-        u'diag([a11, a22, ...]) /* needs load("diag") */',
-        u'diff(expr, x)',
-        u'diff(expr, x, n)',
-        u'display(expr_1, ..., expr_n)',
-        u'eigenvalues(matrix)',
-        u'eigenvectors(matrix)',
-        u'erf(x)',
-        u'erfc(x)',
-        u'ev(expr, x = a)',
-        u'exp(x)',
-        u'example(topic)',
-        u'expand(expr)',
-        u'declare(a_1, integer, ...)$ /* <-> remove(a_1, integer, ...)$ */ facts();',
-        u"desolve('diff(f(x), x) ..., f(x))",
-        u"desolve(['diff(f(x), x) ..., 'diff(g(x), x) ...], [f(x), g(x)])",
-        u'factor(expr)',
-        u'factorial(n)',
-        u'facts()',
-        u'float(expr)',
-        u'floor(x)',
-        u'forget(x > 0, ...)$',
-        u'for variable: initial_value step increment thru limit do (body, ...)',
-        u'for variable: initial_value step increment while condition do (body, ...)',
-        u'for variable: initial_value step increment unless condition do (body, ...)',
-        u'for variable in [list] do (body, ...)',
-        u'for variable in [list] do (body, ...)',
-        u'fullratsimp(expr)',
-        u'fpprec: digits$',
-        u"ic1(ode2('diff(y, x) ..., y, x), x = x0, y = y0)",
-        u"ic2(ode2('diff(y, x) ..., y, x), x = x0, y = y0, 'diff(y, x) = dy0)",
-        u'ident(n)',
-        u'if cond_1 then expr_1',
-        u'if cond_1 then expr_1 else expr_0',
-        u'if cond_1 then expr_1 elseif cond_2 then expr_2 elseif ... else expr_0',
-        u'inf /* real positive infinity */',
-        u'infinity /* complex infinity */',
-        u'integrate(expr, x)',
-        u'integrate(expr, x, a, b)',
-        u'invert(matrix)',
-        u'kill(a_1, ...)$',
-        u'kill(all)$',
-        u'kron_delta(x1, x2, ...)',
-        u'levi_civita([i, j, k]) /* needs load("itensor") */',
-        u'limit(expr, x, val)',
-        u'matrix([a_11, ...], [a_21, ...])',
-        u'makelist(expr, i, i_0, i_1)',
-        u'max(x_1, ...)',
-        u'minf /* real negative infinity */',
-        u'min(x_1, ...)',
-        u'mod(x, y)',
-        u'multthru(expr)',
-        u'multthru(x, expr)',
-        u'newline()',
-        u"ode2('diff(y, x) ..., y, x)",
-        u"ode2('diff(y, x) ..., y, x); bc2(%, x = x1, y = y1, x = x2, y = y2)",
-        u"ode2('diff(y, x) ..., y, x); ic1(%, x = x0, y = y0)",
-        u"ode2('diff(y, x) ..., y, x); ic2(%, x = x0, y = y0, 'diff(y, x) = dy0)",
-        u'partfrac(expr, x)',
-        u'plot2d(f(x), [x, x_min, x_max], [style, lines], [color, red], [legend, "f(x)"], [xlabel, "x"], ' +
-            u'[ylabel, "y"], [y, y_min, y_max])$',
-        u'plot2d([f(x), g(x)], [x, x_min, x_max], [style, lines], [color, red], [legend, "f(x)", "g(x)"], ' +
-            u'[xlabel, "x"], [ylabel, "y"], [y, y_min, y_max])$',
-        u'plot2d(discrete, [x_0, ...], [y_0, ...], [x, x_min, x_max], [style, points], [color, red], ' +
-            u'[legend, "series 1"], [xlabel, "x"], [ylabel, "y"], [y, y_min, y_max])$',
-        u'plot2d(discrete, [x_0, y_0], [x_1, y_1], [x, x_min, x_max], [style, points], [color, red], ' +
-            u'[legend, "series 1"], [xlabel, "x"], [ylabel, "y"], [y, y_min, y_max])$',
-        u'print(expr_1, ..., expr_n)',
-        u'printf(true, "string", expr_1, ..., expr_n) /* format example: ~d~t~3,1e~t~g~% */',
-        u'product(expr, i, i_0, i_1)',
-        u'product(expr, i, i_0, i_1), simpproduct',
-        u'radcan(expr)',
-        u'rat(expr, x_1, ...)',
-        u'rationalize(expr)',
-        u'ratsimp(expr)',
-        u'remove(a_1, integer, ...)$',
-        u'round(x)',
-        u'simpproduct',
-        u'simpsum',
-        u'sin(x)',
-        u'sinh(x)',
-        u'solve(expr, x)',
-        u'solve([eqn_1, ...], [x_1, ...])',
-        u'sprint(expr_1, ..., expr_n) /* in one line */',
-        u'sqrt(x)',
-        u'subst(a, x, expr)',
-        u'sum(expr, i, i_0, i_1)',
-        u'sum(expr, i, i_0, i_1), simpsum',
-        u'tan(x)',
-        u'tanh(x)',
-        u'taylor(expr, x, a, n)',
-        u'thru count do (body, ...)',
-        u'trigexpand(expr)',
-        u'trigsimp(expr)',
-        u'transpose(matrix)',
-        u'unless  unless condition do (body, ...)',
-        u'while condition do (body, ...)',
+        '%e',
+        '%gamma',
+        '%i',
+        '%pi',
+        ':lisp $%;',
+        'abs(x)',
+        'acos(x)',
+        'acosh(x)',
+        'asin(x)',
+        'asinh(x)',
+        'assume(x > 0, ...)$ /* <-> forget(x > 0, ...)$ */ facts();',
+        'atan(x)',
+        'atanh(x)',
+        'atan2(y, x)',
+        'atvalue(f(x), x = x0, f0)',
+        "bc2(ode2('diff(y, x) ..., y, x), x = x1, y = y1, x = x2, y = y2)",
+        'binomial(n, k)',
+        'ceiling(x)',
+        'cos(x)',
+        'cosh(x)',
+        'determinant(matrix)',
+        'depends(f_1, x_1, ..., [f_n, g_n], [x_n, y_n])',
+        'dependencies',
+        'diag([a11, a22, ...]) /* needs load("diag") */',
+        'diff(expr, x)',
+        'diff(expr, x, n)',
+        'display(expr_1, ..., expr_n)',
+        'eigenvalues(matrix)',
+        'eigenvectors(matrix)',
+        'erf(x)',
+        'erfc(x)',
+        'ev(expr, x = a)',
+        'exp(x)',
+        'example(topic)',
+        'expand(expr)',
+        'declare(a_1, integer, ...)$ /* <-> remove(a_1, integer, ...)$ */ facts();',
+        "desolve('diff(f(x), x) ..., f(x))",
+        "desolve(['diff(f(x), x) ..., 'diff(g(x), x) ...], [f(x), g(x)])",
+        'factor(expr)',
+        'factorial(n)',
+        'facts()',
+        'float(expr)',
+        'floor(x)',
+        'forget(x > 0, ...)$',
+        'for variable: initial_value step increment thru limit do (body, ...)',
+        'for variable: initial_value step increment while condition do (body, ...)',
+        'for variable: initial_value step increment unless condition do (body, ...)',
+        'for variable in [list] do (body, ...)',
+        'for variable in [list] do (body, ...)',
+        'fullratsimp(expr)',
+        'fpprec: digits$',
+        "ic1(ode2('diff(y, x) ..., y, x), x = x0, y = y0)",
+        "ic2(ode2('diff(y, x) ..., y, x), x = x0, y = y0, 'diff(y, x) = dy0)",
+        'ident(n)',
+        'if cond_1 then expr_1',
+        'if cond_1 then expr_1 else expr_0',
+        'if cond_1 then expr_1 elseif cond_2 then expr_2 elseif ... else expr_0',
+        'inf /* real positive infinity */',
+        'infinity /* complex infinity */',
+        'integrate(expr, x)',
+        'integrate(expr, x, a, b)',
+        'invert(matrix)',
+        'kill(a_1, ...)$',
+        'kill(all)$',
+        'kron_delta(x1, x2, ...)',
+        'levi_civita([i, j, k]) /* needs load("itensor") */',
+        'limit(expr, x, val)',
+        'matrix([a_11, ...], [a_21, ...])',
+        'makelist(expr, i, i_0, i_1)',
+        'max(x_1, ...)',
+        'minf /* real negative infinity */',
+        'min(x_1, ...)',
+        'mod(x, y)',
+        'multthru(expr)',
+        'multthru(x, expr)',
+        'newline()',
+        "ode2('diff(y, x) ..., y, x)",
+        "ode2('diff(y, x) ..., y, x); bc2(%, x = x1, y = y1, x = x2, y = y2)",
+        "ode2('diff(y, x) ..., y, x); ic1(%, x = x0, y = y0)",
+        "ode2('diff(y, x) ..., y, x); ic2(%, x = x0, y = y0, 'diff(y, x) = dy0)",
+        'partfrac(expr, x)',
+        'plot2d(f(x), [x, x_min, x_max], [style, lines], [color, red], [legend, "f(x)"], [xlabel, "x"], ' +
+            '[ylabel, "y"], [y, y_min, y_max])$',
+        'plot2d([f(x), g(x)], [x, x_min, x_max], [style, lines], [color, red], [legend, "f(x)", "g(x)"], ' +
+            '[xlabel, "x"], [ylabel, "y"], [y, y_min, y_max])$',
+        'plot2d(discrete, [x_0, ...], [y_0, ...], [x, x_min, x_max], [style, points], [color, red], ' +
+            '[legend, "series 1"], [xlabel, "x"], [ylabel, "y"], [y, y_min, y_max])$',
+        'plot2d(discrete, [x_0, y_0], [x_1, y_1], [x, x_min, x_max], [style, points], [color, red], ' +
+            '[legend, "series 1"], [xlabel, "x"], [ylabel, "y"], [y, y_min, y_max])$',
+        'print(expr_1, ..., expr_n)',
+        'printf(true, "string", expr_1, ..., expr_n) /* format example: ~d~t~3,1e~t~g~% */',
+        'product(expr, i, i_0, i_1)',
+        'product(expr, i, i_0, i_1), simpproduct',
+        'radcan(expr)',
+        'rat(expr, x_1, ...)',
+        'rationalize(expr)',
+        'ratsimp(expr)',
+        'remove(a_1, integer, ...)$',
+        'round(x)',
+        'simpproduct',
+        'simpsum',
+        'sin(x)',
+        'sinh(x)',
+        'solve(expr, x)',
+        'solve([eqn_1, ...], [x_1, ...])',
+        'sprint(expr_1, ..., expr_n) /* in one line */',
+        'sqrt(x)',
+        'subst(a, x, expr)',
+        'sum(expr, i, i_0, i_1)',
+        'sum(expr, i, i_0, i_1), simpsum',
+        'tan(x)',
+        'tanh(x)',
+        'taylor(expr, x, a, n)',
+        'thru count do (body, ...)',
+        'trigexpand(expr)',
+        'trigsimp(expr)',
+        'transpose(matrix)',
+        'unless  unless condition do (body, ...)',
+        'while condition do (body, ...)',
     )
 
     def __init__(self, parent, id = wx.ID_ANY, value = wx.EmptyString, pos = wx.DefaultPosition,
@@ -3365,4 +3467,3 @@ if __name__ == '__main__':
         frame_main.load_doc(sys.argv[1])
     frame_main.Show()
     app.MainLoop()
-
