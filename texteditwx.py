@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/4/10 8:15:51 PM
+# 2025/4/10 8:54:19 PM
 
-version = '2025/4/10 8:15:51 PM'
+version = '2025/4/10 8:54:19 PM'
 
 import sys
 
@@ -632,7 +632,8 @@ class Maxima(object):
         s = self.remove_redundant_parentheses(s)[0]
         if debug:
             print('modify_output 2 = "{}"'.format(s))
-        s = resub_outside((r'([^(^])-([^0-9])', r'([+=])', ','), (r'\1 - \2', r' \1 ', ', '), s, r'"(\\.|[^"])*"')
+        s = resub_outside((r'([^(^\[])-', r'([+=])', ',',  '([0-9.][eb]) ([-+]) ([0-9])'),
+                          (r'\1 - ',      r' \1 ',   ', ', r'\1\2\3'                     ), s, r'"(\\.|[^"])*"')
         if debug:
             print('modify_output 3 = "{}"'.format(s))
         return s
