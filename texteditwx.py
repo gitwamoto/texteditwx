@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/4/9 8:00:46 PM
+# 2025/4/10 9:13:37 AM
 
-version = '2025/4/9 8:00:46 PM'
+version = '2025/4/10 9:13:37 AM'
 
 import sys
 
@@ -564,30 +564,29 @@ class Maxima(object):
                     r += s[:m.end()]
                     s = s[m.end():]
                     if debug:
-                        print('    operator {}, last_priority = {}, min_priority = {}'.format(
-                            m[2], last_priority, min_priority))
+                        print('    operator {}, min_priority = {}'.format(m[2], min_priority))
                 elif m[0] == '(':
                     r += s[:m.end() - 1] # string before '('
                     if debug:
                         print('    (')
                         print('        r = "{}"'.format(r))
-                    inside, inside_priority, remainder = Maxima.remove_redundant_parentheses(s[m.end():])
+                    inside, inside_priority, s = Maxima.remove_redundant_parentheses(s[m.end():])
                     if debug:
-                        print('        inside = "{}", inside_priority = {}, remainder = "{}"'.format(
-                            inside, inside_priority, remainder))
-                    m = re.match(r'!!?|\^\^?|\*\*?|\.(?![0-9])|[/+\-]', remainder)
+                        print('        inside = "{}", inside_priority = {}, s = "{}"'.format(
+                            inside, inside_priority, s))
+                    m = re.match(r'!!?|\^\^?|\*\*?|\.(?![0-9])|[/+\-]', s)
                     if m:
                         if debug:
                             print('        following operator = "{}"'.format(m[0]))
-                        if (last_priority <= inside_priority and priority[m[0]] <= inside_priority or
+                        if (last_priority <= inside_priority >= priority[m[0]] or
                             inside_priority == priority['*'] and m[0] == '/'): # conversion (a*b)/c = a*b/c is done here
-                            r += inside + remainder[:m.end()]
+                            r += inside + s[:m.end()]
                         else:
-                            r += '(' + inside + ')' + remainder[:m.end()]
+                            r += '(' + inside + ')' + s[:m.end()]
                         last_priority = priority[m[0]]
                         if min_priority > last_priority:
                             min_priority = last_priority
-                        s = remainder[m.end():]
+                        s = s[m.end():]
                     else: # no operator follows after a closing parenthesis
                         if debug:
                             print('        no following operator')
@@ -595,15 +594,12 @@ class Maxima(object):
                             r += inside
                         else:
                             r += '(' + inside + ')'
-                        s = remainder
                     if debug:
-                        print('        r = "{}", last_priority = {}, min_priority = "{}"'.format(
-                            r, last_priority, min_priority))
+                        print('        r = "{}", min_priority = "{}"'.format(r, min_priority))
                 elif m[0] == ')':
                     r += s[:m.end() - 1] # string before ')'
                     if debug:
-                        print('    ), return, r = "{}", min_priority = {}, remainder = "{}"'.format(
-                            r, min_priority, s[m.end():]))
+                        print('    ), r = "{}", remainder = "{}"'.format(r, s[m.end():]))
                     return r, min_priority, s[m.end():]
                 else: # function
                     if debug:
