@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/4/10 8:54:19 PM
+# 2025/4/11 2:27:24 PM
 
 version = '2025/4/10 8:54:19 PM'
 
@@ -282,24 +282,23 @@ def line_numbered_str(s, head = True, prefix = '', suffix = ': '):
         s = s[:-len(r)]
     return s
 
-def resub_outside(pattern, repl, string, inside_pattern = r'"(\\.|[^"])*"'):
+def resub_outside(pat_repl, string, inside_pattern = r'"(\\.|[^"])*"'):
+    # pat_repl = (pattern, replacement) or (pattern, replacement),)
     # r'"(\\.|[^"])*"' -> string enclosed in double quotes
-    if not isinstance(pattern, (list, tuple)):
-        pattern = (pattern,)
-    if not isinstance(repl, (list, tuple)):
-        repl = (repl,)
+    if not isinstance(pat_repl[0], (list, tuple)):
+        pat_repl = (pat_repl,)
     s = ''
     while len(string) > 0:
         m = re.search(inside_pattern, string) # string which allows escape characters
         if m:
             t = string[:m.start()]
-            for p, r in zip(pattern, repl):
+            for p, r in pat_repl:
                 t = re.sub(p, r, t)
             s += t + m[0]
             string = string[m.end():]
         else:
             t = string
-            for p, r in zip(pattern, repl):
+            for p, r in pat_repl:
                 t = re.sub(p, r, t)
             s += t
             break
@@ -624,16 +623,20 @@ class Maxima(object):
             print('modify_output 0 = "{}"'.format(s))
         if remove_new_lines:
             # r'"(\\.|[^"])*"' -> string enclosed in double quotes
-            s = resub_outside(r' *\n *', '', s, r'"(\\.|[^"])*"').strip()
-        # remove spaces, 'func( -> func(
-        s = resub_outside((' ', r"'?([_A-Za-z][_A-Za-z0-9]*)\("), ('',  r'\1('), s, r'"(\\.|[^"])*"')
+            s = resub_outside((r' *\n *', ''), s, r'"(\\.|[^"])*"').strip()
+        s = resub_outside(((' ', ''), # remove spaces
+                           (r"'?([_A-Za-z][_A-Za-z0-9]*)\(", r'\1(')), # 'func( -> func(
+                           s, r'"(\\.|[^"])*"')
         if debug:
             print('modify_output 1 = "{}"'.format(s))
         s = self.remove_redundant_parentheses(s)[0]
         if debug:
             print('modify_output 2 = "{}"'.format(s))
-        s = resub_outside((r'([^(^\[])-', r'([+=])', ',',  '([0-9.][eb]) ([-+]) ([0-9])'),
-                          (r'\1 - ',      r' \1 ',   ', ', r'\1\2\3'                     ), s, r'"(\\.|[^"])*"')
+        s = resub_outside(((r'([^(^\[])-', r'\1 - '),
+                           (r'([+=])', r' \1 '),
+                           (',',  ', '),
+                           (r'([^_A-Za-z](?:[0-9]+\.?|\.[0-9]+)[eb]) ([-+]) ([0-9])', r'\1\2\3')), # 1.0e + 10 -> 1.0e+10
+                           s, r'"(\\.|[^"])*"')
         if debug:
             print('modify_output 3 = "{}"'.format(s))
         return s
