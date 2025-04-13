@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/4/11 2:27:24 PM
+# 2025/4/13 6:50:48 PM
 
-version = '2025/4/10 8:54:19 PM'
+version = '2025/4/13 6:50:48 PM'
 
 import sys
 
@@ -605,7 +605,10 @@ class Maxima(object):
                         print('    function = "{}", '.format(m[3]))
                     r += s[:m.end()]
                     inside, _, s =  Maxima.remove_redundant_parentheses(s[m.end():])
-                    r += inside + ')'
+                    if m[3] == 'diff' and inside.endswith(',1'):
+                        r += inside[:-2] + ')'
+                    else:
+                        r += inside + ')'
                     if debug:
                         print('    function, r = "{}", '.format(r))
             else:
