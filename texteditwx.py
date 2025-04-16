@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/4/16 10:02:14 AM
+# 2025/4/16 7:15:58 PM
 
-version = '2025/4/16 10:02:14 AM'
+version = '2025/4/16 7:15:58 PM'
 
 import sys
 
@@ -384,23 +384,23 @@ class Maxima(object):
             self.commands_list = []
         else:
             commands_list_remain = None
-        commands = re.sub(r'/\*.*?\*/', '', commands)
+        commands = re.sub(r'/\*(\*(?!/)|[^*])*\*/', '', commands) # remove comment
         while True:
-            r = re.search(r':lisp |[;$]', commands)
-            if r:
-                if r.group() == ':lisp ':
-                    r = commands.find(';')
-                    if r != -1:
-                        self.commands_list.append(commands[:r + 1].strip())
-                        commands = commands[r + 1:]
+            m = re.search(':lisp |[;$]', commands)
+            if m:
+                if m[0] == ':lisp ':
+                    m = commands.find(';')
+                    if m != -1:
+                        self.commands_list.append(commands[:m + 1].strip())
+                        commands = commands[m + 1:]
                     else:
                         self.commands_list.append(commands.strip() + ';')
                         break
                 else:
-                    c = commands[:r.end()].strip()
+                    c = commands[:m.end()].strip()
                     if c not in ';$':
                         self.commands_list.append(c)
-                    commands = commands[r.end():]
+                    commands = commands[m.end():]
             else:
                 c = commands.strip()
                 if c != '':
@@ -423,15 +423,19 @@ class Maxima(object):
                 self.expect(r"(\(%i\d+\)|Enter space-separated numbers, `all' or `none':|.+\?)\s*$")
             except:
                 raise
+            if self.maxima.before.startswith(c + '\n'):
+                 self.maxima.before = self.maxima.before[len(c) + 1:]
             if debug:
                 print('    before = "{}"'.format(self.maxima.before))
                 print('    after = "{}"'.format(self.maxima.after))
             if self.maxima.after.startswith('(%i'):
                 self.last_input = self.maxima.after
-                s = self.maxima.before[self.maxima.before.find('\n') + 1:].lstrip('\n').rstrip()
+                s = self.maxima.before.lstrip('\n').rstrip()
                 while c.endswith(';') and s == '':
                     self.expect(r'\(%i\d+\)')
-                    s = self.maxima.before[self.maxima.before.find('\n') + 1:].lstrip('\n').rstrip()
+                    if self.maxima.before.startswith(c + '\n'):
+                        self.maxima.before = self.maxima.before[len(c) + 1:]
+                    s = self.maxima.before.lstrip('\n').rstrip()
                 if debug:
                     print('    s = "{}"'.format(s))
                 if c.endswith('$') and (s == '' or s.startswith('(%i') or s.endswith('$')):
@@ -445,23 +449,23 @@ class Maxima(object):
                         l_output = 0
                     continue
                 i = len(s) - 5
-                r = None
+                m = None
                 while i >= 0:
-                    r = re.match(r'\(%o\d+\)', s[i:])
-                    if r:
+                    m = re.match(r'\(%o\d+\)', s[i:])
+                    if m:
                         break
                     else:
                         i -= 1
                 if re.match(r'(for|thru|while|unless) |(s?print|printf|display) *\(', c):
-                    if r: # re.match(r'\(%o\d+\)', s[i:])
-                        t = s[i + r.end():]
+                    if m: # re.match(r'\(%o\d+\)', s[i:])
+                        t = s[i + m.end():]
                         s = self.modify_output(s[:i], remove_new_lines = False)
                         if not replace:
-                            s += '\n\n/* ' + r[0] + ': */\n' + self.modify_output(t)
+                            s += '\n\n/* ' + m[0] + ': */\n' + self.modify_output(t)
                     else:
                         s = self.modify_output(s, remove_new_lines = False)
                     l_output = len(s)
-                elif r: # re.match(r'\(%o\d+\)', s[i:])
+                elif m: # re.match(r'\(%o\d+\)', s[i:])
                     if c.startswith('? ') or self.in_help:
                         l_output = 0
                         s = '/* HELP: */\n' + s[:i].rstrip()
@@ -471,10 +475,10 @@ class Maxima(object):
                         l_output = 0
                         s = '/* EXAMPLE: */\n' + s[:i].rstrip()
                     else:
-                        s = self.modify_output(s[i + r.end():])
+                        s = self.modify_output(s[i + m.end():])
                         l_output = len(s)
                         if not replace:
-                            s = '/* ' + r[0] + ': */\n' + s
+                            s = '/* ' + m[0] + ': */\n' + s
                 elif c.startswith(':lisp '):
                     if not replace:
                         l_output = len(s)
@@ -502,8 +506,7 @@ class Maxima(object):
             elif self.maxima.after.startswith("Enter space-separated numbers, `all' or `none':"):
                 # example: ?? plot
                 outputs.append(
-                    self.maxima.before[self.maxima.before.find('\n') + 1:].lstrip('\n') +
-                    self.maxima.after.rstrip() + '\n\n')
+                    self.maxima.before.lstrip('\n') + self.maxima.after.rstrip() + '\n\n')
                 self.in_help = True
                 return outputs, 0
             else:
@@ -1151,11 +1154,11 @@ class MyTextCtrl(wx.TextCtrl):
             if j == -1:
                 j = len(v.rstrip())
             commands = v[i:j]
-            r = re.match(r'(?:/\* \(%i\d+\): \*/\n)+', commands)
-            if r:
-                commands = commands[r.end():]
-                self.Remove(i, i + r.end(), record_op = False)
-                j -= r.end()
+            m = re.match(r'(?:/\* \(%i\d+\): \*/\n)+', commands)
+            if m:
+                commands = commands[m.end():]
+                self.Remove(i, i + m.end(), record_op = False)
+                j -= m.end()
             if commands == u'':
                 return
             elif commands[-1] not in u';$':
@@ -1884,19 +1887,19 @@ class DialogFind(wx.Dialog):
             if not i[self.grid_find.table.COL_ACTIVE] or i[self.grid_find.table.COL_FIND] is None:
                 continue
             if i[self.grid_find.table.COL_RE]:
-                r = re.search(i[self.grid_find.table.COL_FIND], v)
-                if r:
-                    found.append([r.start(), r.end(), i, n])
+                m = re.search(i[self.grid_find.table.COL_FIND], v)
+                if m:
+                    found.append([m.start(), m.end(), i, n])
                     n += 1
             elif self.checkBox_ignore_case.GetValue():
-                r = re.search(i[self.grid_find.table.COL_FIND], v, flags = re.IGNORECASE)
-                if r:
-                    found.append([r.start(), r.end(), i, n])
+                m = re.search(i[self.grid_find.table.COL_FIND], v, flags = re.IGNORECASE)
+                if m:
+                    found.append([m.start(), m.end(), i, n])
                     n += 1
             else:
-                r = v.find(i[self.grid_find.table.COL_FIND])
-                if r != -1:
-                    found.append([r, r + len(i[self.grid_find.table.COL_FIND]), i, n])
+                m = v.find(i[self.grid_find.table.COL_FIND])
+                if m != -1:
+                    found.append([m, m + len(i[self.grid_find.table.COL_FIND]), i, n])
                     n += 1
         shift = 0
         while len(found) > 0:
@@ -1920,17 +1923,17 @@ class DialogFind(wx.Dialog):
             for j in refind:
                 i, n = j[0], j[1]
                 if i[self.grid_find.table.COL_RE]:
-                    r = re.search(i[self.grid_find.table.COL_FIND], v)
-                    if r:
-                        found.append([r.start(), r.end(), i, n])
+                    m = re.search(i[self.grid_find.table.COL_FIND], v)
+                    if m:
+                        found.append([m.start(), m.end(), i, n])
                 elif self.checkBox_ignore_case.GetValue():
-                    r = re.search(i[self.grid_find.table.COL_FIND], v, flags = re.IGNORECASE)
-                    if r:
-                        found.append([r.start(), r.end(), i, n])
+                    m = re.search(i[self.grid_find.table.COL_FIND], v, flags = re.IGNORECASE)
+                    if m:
+                        found.append([m.start(), m.end(), i, n])
                 else:
-                    r = v.find(i[self.grid_find.table.COL_FIND])
-                    if r != -1:
-                        found.append([r, r + len(i[self.grid_find.table.COL_FIND]), i, n])
+                    m = v.find(i[self.grid_find.table.COL_FIND])
+                    if m != -1:
+                        found.append([m, m + len(i[self.grid_find.table.COL_FIND]), i, n])
 
     def button_clearOnButtonClick(self, event):
         self.target.reset_styles()
@@ -1966,19 +1969,19 @@ class DialogFind(wx.Dialog):
             if not i[self.grid_find.table.COL_ACTIVE] or i[self.grid_find.table.COL_FIND] is None:
                 continue
             if i[self.grid_find.table.COL_RE]:
-                r = re.search(i[self.grid_find.table.COL_FIND], v0)
-                if r:
-                    found.append([r.start(), r.end(), i, n])
+                m = re.search(i[self.grid_find.table.COL_FIND], v0)
+                if m:
+                    found.append([m.start(), m.end(), i, n])
                     n += 1
             elif self.checkBox_ignore_case.GetValue():
-                r = re.search(i[self.grid_find.table.COL_FIND], v0, flags = re.IGNORECASE)
-                if r:
-                    found.append([r.start(), r.end(), i, n])
+                m = re.search(i[self.grid_find.table.COL_FIND], v0, flags = re.IGNORECASE)
+                if m:
+                    found.append([m.start(), m.end(), i, n])
                     n += 1
             else:
-                r = v0.find(i[self.grid_find.table.COL_FIND])
-                if r != -1:
-                    found.append([r, r + len(i[self.grid_find.table.COL_FIND]), i, n])
+                m = v0.find(i[self.grid_find.table.COL_FIND])
+                if m != -1:
+                    found.append([m, m + len(i[self.grid_find.table.COL_FIND]), i, n])
                     n += 1
         v1 = u''
         while len(found) > 0:
@@ -2011,17 +2014,17 @@ class DialogFind(wx.Dialog):
             for j in refind:
                 i, n = j[0], j[1]
                 if i[self.grid_find.table.COL_RE]:
-                    r = re.search(i[self.grid_find.table.COL_FIND], v0)
-                    if r:
-                        found.append([r.start(), r.end(), i, n])
+                    m = re.search(i[self.grid_find.table.COL_FIND], v0)
+                    if m:
+                        found.append([m.start(), m.end(), i, n])
                 elif self.checkBox_ignore_case.GetValue():
-                    r = re.search(i[self.grid_find.table.COL_FIND], v0, flags = re.IGNORECASE)
-                    if r:
-                        found.append([r.start(), r.end(), i, n])
+                    m = re.search(i[self.grid_find.table.COL_FIND], v0, flags = re.IGNORECASE)
+                    if m:
+                        found.append([m.start(), m.end(), i, n])
                 else:
-                    r = v0.find(i[self.grid_find.table.COL_FIND])
-                    if r != -1:
-                        found.append([r, r + len(i[self.grid_find.table.COL_FIND]), i, n])
+                    m = v0.find(i[self.grid_find.table.COL_FIND])
+                    if m != -1:
+                        found.append([m, m + len(i[self.grid_find.table.COL_FIND]), i, n])
         v1 += v0
         if s[0] == s[1]:
             self.target.SetValue(v1)
@@ -2037,17 +2040,17 @@ class DialogFind(wx.Dialog):
             if not i[self.grid_find.table.COL_ACTIVE] or i[self.grid_find.table.COL_FIND] is None:
                 continue
             if i[self.grid_find.table.COL_RE]:
-                r = re.search(i[self.grid_find.table.COL_FIND], v[start:end])
-                if r and (self.found is None or r.start() > self.found[0]):
-                    self.found = [r.start(), r.end(), i]
+                m = re.search(i[self.grid_find.table.COL_FIND], v[start:end])
+                if m and (self.found is None or m.start() > self.found[0]):
+                    self.found = [m.start(), m.end(), i]
             elif self.checkBox_ignore_case.GetValue():
-                r = re.search(i[self.grid_find.table.COL_FIND], v[start:end], flags = re.IGNORECASE)
-                if r and (self.found is None or r.start() > self.found[0]):
-                    self.found = [r.start(), r.end(), i]
+                m = re.search(i[self.grid_find.table.COL_FIND], v[start:end], flags = re.IGNORECASE)
+                if m and (self.found is None or m.start() > self.found[0]):
+                    self.found = [m.start(), m.end(), i]
             else:
-                r = v[start:end].find(i[self.grid_find.table.COL_FIND])
-                if r != -1 and (self.found is None or r > self.found[0]):
-                    self.found = [r, r + len(i[self.grid_find.table.COL_FIND]), i]
+                m = v[start:end].find(i[self.grid_find.table.COL_FIND])
+                if m != -1 and (self.found is None or m > self.found[0]):
+                    self.found = [m, m + len(i[self.grid_find.table.COL_FIND]), i]
         if self.found is not None:
             self.found[0] += start
             self.found[1] += start
@@ -2077,17 +2080,17 @@ class DialogFind(wx.Dialog):
             if not i[self.grid_find.table.COL_ACTIVE] or i[self.grid_find.table.COL_FIND] is None:
                 continue
             if i[self.grid_find.table.COL_RE]:
-                r = re.search(i[self.grid_find.table.COL_FIND], v[point:])
-                if r and (self.found is None or r.start() < self.found[0]):
-                    self.found = [r.start(), r.end(), i]
+                m = re.search(i[self.grid_find.table.COL_FIND], v[point:])
+                if m and (self.found is None or m.start() < self.found[0]):
+                    self.found = [m.start(), m.end(), i]
             elif self.checkBox_ignore_case.GetValue():
-                r = re.search(i[self.grid_find.table.COL_FIND], v[point:], flags = re.IGNORECASE)
-                if r and (self.found is None or r.start() < self.found[0]):
-                    self.found = [r.start(), r.end(), i]
+                m = re.search(i[self.grid_find.table.COL_FIND], v[point:], flags = re.IGNORECASE)
+                if m and (self.found is None or m.start() < self.found[0]):
+                    self.found = [m.start(), m.end(), i]
             else:
-                r = v[point:].find(i[self.grid_find.table.COL_FIND])
-                if r != -1 and (self.found is None or r < self.found[0]):
-                    self.found = [r, r + len(i[self.grid_find.table.COL_FIND]), i]
+                m = v[point:].find(i[self.grid_find.table.COL_FIND])
+                if m != -1 and (self.found is None or m < self.found[0]):
+                    self.found = [m, m + len(i[self.grid_find.table.COL_FIND]), i]
         if self.found is not None:
             self.found[0] += point
             self.found[1] += point
@@ -2111,16 +2114,16 @@ class DialogFind(wx.Dialog):
         if self.found is None or s == u'':
             return
         if self.found[2][self.grid_find.table.COL_RE]:
-            r = re.match(self.found[2][self.grid_find.table.COL_FIND], s)
-            if r and r.end() == len(s):
+            m = re.match(self.found[2][self.grid_find.table.COL_FIND], s)
+            if m and m.end() == len(s):
                 if self.found[2][self.grid_find.table.COL_REPLACE] is not None:
                     self.target.WriteText(re.sub(self.found[2][self.grid_find.table.COL_FIND],
                         self.found[2][self.grid_find.table.COL_REPLACE], s))
                 else:
                     self.target.Remove(*self.target.GetSelection())
         elif self.checkBox_ignore_case.GetValue():
-            r = re.match(self.found[2][self.grid_find.table.COL_FIND], s, flags = re.IGNORECASE)
-            if r and r.end() == len(s):
+            m = re.match(self.found[2][self.grid_find.table.COL_FIND], s, flags = re.IGNORECASE)
+            if m and m.end() == len(s):
                 if self.found[2][self.grid_find.table.COL_REPLACE] is not None:
                     self.target.WriteText(re.sub(self.found[2][self.grid_find.table.COL_FIND],
                         self.found[2][self.grid_find.table.COL_REPLACE], s))
@@ -3400,8 +3403,8 @@ class FrameMain(wx.Frame):
                 _(u'接続エラー'), style = wx.ICON_ERROR) as md:
                 md.ShowModal()
             return
-        r = re.search(b"version\\s*=\\s*'([0-9/ :APM]+)'\n", s[0])
-        if r is not None and time_str_a_is_newer_than_b(a = r[1].decode(s[1]), b = version):
+        m = re.search(b"version\\s*=\\s*'([0-9/ :APM]+)'\n", s[0])
+        if m is not None and time_str_a_is_newer_than_b(a = m[1].decode(s[1]), b = version):
             p = correct_file_name_in_unicode(os.path.realpath(decode_if_necessary(__file__)))
             with open(p, 'wb') as f:
                 f.write(s[0])
