@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/4/16 9:57:53 AM
+# 2025/4/16 10:02:14 AM
 
-version = '2025/4/16 9:57:53 AM'
+version = '2025/4/16 10:02:14 AM'
 
 import sys
 
@@ -2331,7 +2331,7 @@ class FrameMain(wx.Frame):
         self.menuItem_find_prev = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'前を検索') + '\tShift+Ctrl+G',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_find_prev)
-        self.menuItem_replace = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'置換') + '\tCtrl+',
+        self.menuItem_replace = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'置換') + '\tCtrl+' +
             # MacOS Venturaで，@がShift+;に変換されてしまう問題の対処
             ('_' if sys.platform == 'darwin' and int(platform.mac_ver()[0].split('.')[0]) >= 13 else '='),
             wx.EmptyString, wx.ITEM_NORMAL)
