@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/4/13 7:10:50 PM
+# 2025/4/16 9:57:53 AM
 
-version = '2025/4/13 7:10:50 PM'
+version = '2025/4/16 9:57:53 AM'
 
 import sys
 
@@ -605,7 +605,7 @@ class Maxima(object):
                         print('    function = "{}", '.format(m[3]))
                     r += s[:m.end()]
                     inside, _, s =  Maxima.remove_redundant_parentheses(s[m.end():])
-                    if m[3] == 'diff' and inside.endswith(',1'):
+                    if m[3] == 'diff' and inside.endswith(',1') and inside[:-2].find(',') == -1:
                         r += inside[:-2] + ')'
                     else:
                         r += inside + ')'
@@ -2250,29 +2250,12 @@ class FrameMain(wx.Frame):
 
         self.panel1 = wx.Panel(self.splitter, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
         bSizer2 = wx.BoxSizer(wx.HORIZONTAL)
-############
         self.textCtrl_edit = MyTextCtrl(self.panel1, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
             wx.TE_MULTILINE | wx.TE_NOHIDESEL | wx.TE_RICH | wx.TE_PROCESS_TAB, font)
         # wx.TE_NOHIDESEL is required to avoid a caret display problem in windows
         # wx.TE_RICH is required to avoid a problem associated with CR+LF
         self.textCtrl_edit.escape_from_shortcut_function = self.menuItem_command_shortcutOnMenuSelection
         bSizer2.Add(self.textCtrl_edit, 1, wx.ALL | wx.EXPAND, 5)
-############
-#        self.notebook = wx.Notebook(self.panel1, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0)
-#        self.panel11 = wx.Panel(self.notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
-#        bSizer3 = wx.BoxSizer(wx.HORIZONTAL)
-#        self.textCtrl_edit = MyTextCtrl(self.panel11, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
-#            wx.TE_MULTILINE | wx.TE_NOHIDESEL | wx.TE_RICH | wx.TE_PROCESS_TAB, font)
-#        # wx.TE_NOHIDESEL is required to avoid a caret display problem in windows
-#        # wx.TE_RICH is required to avoid a problem associated with CR+LF
-#        self.textCtrl_edit.escape_from_shortcut_function = self.menuItem_command_shortcutOnMenuSelection
-#        bSizer3.Add(self.textCtrl_edit, 1, wx.ALL | wx.EXPAND, 5)
-#        self.panel11.SetSizer(bSizer3)
-#        self.panel11.Layout()
-#        bSizer3.Fit(self.panel11)
-#        self.notebook.AddPage(self.panel11, u'a page', False)
-#        bSizer2.Add(self.notebook, 1, wx.EXPAND |wx.ALL, 5)
-############
         self.panel1.SetSizer(bSizer2)
         self.panel1.Layout()
         bSizer2.Fit(self.panel1)
@@ -2348,7 +2331,9 @@ class FrameMain(wx.Frame):
         self.menuItem_find_prev = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'前を検索') + '\tShift+Ctrl+G',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_find_prev)
-        self.menuItem_replace = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'置換') + '\tCtrl+=',
+        self.menuItem_replace = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'置換') + '\tCtrl+',
+            # MacOS Venturaで，@がShift+;に変換されてしまう問題の対処
+            ('_' if sys.platform == 'darwin' and int(platform.mac_ver()[0].split('.')[0]) >= 13 else '='),
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_edit.Append(self.menuItem_replace)
         self.menuItem_rep_find = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'置換&&次を検索') + '\tCtrl+L',
