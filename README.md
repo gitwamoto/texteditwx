@@ -16,4 +16,4 @@ texteditwx.pyの上側に書いてある，maxima\_location = の右辺を正し
 pip install wxPython pyperclip requests pexpect zenhan
 ```
 
-texteditwxは[ここ](https://github.com/gitwamoto/texteditwxx)からダウンロードできます．
+texteditwxは[ここ](https://github.com/gitwamoto/texteditwx)からダウンロードできます．
