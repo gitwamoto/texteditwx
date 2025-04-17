@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/4/16 7:15:58 PM
+# 2025/4/17 12:50:57 PM
 
-version = '2025/4/16 7:15:58 PM'
+version = '2025/4/17 12:50:57 PM'
 
 import sys
 
@@ -450,22 +450,21 @@ class Maxima(object):
                     continue
                 i = len(s) - 5
                 m = None
-                while i >= 0:
-                    m = re.match(r'\(%o\d+\)', s[i:])
+                while i >= 0: # search (%o<number>) from tail
+                    m = re.match(r'(\(%o\d+\))(.*)', s[i:], re.DOTALL)
                     if m:
                         break
                     else:
                         i -= 1
                 if re.match(r'(for|thru|while|unless) |(s?print|printf|display) *\(', c):
-                    if m: # re.match(r'\(%o\d+\)', s[i:])
-                        t = s[i + m.end():]
+                    if m: # re.match(r'(\(%o\d+\))(.*)', s[i:])
                         s = self.modify_output(s[:i], remove_new_lines = False)
                         if not replace:
-                            s += '\n\n/* ' + m[0] + ': */\n' + self.modify_output(t)
+                            s += '\n\n/* ' + m[1] + ': */\n' + self.modify_output(m[2])
                     else:
                         s = self.modify_output(s, remove_new_lines = False)
                     l_output = len(s)
-                elif m: # re.match(r'\(%o\d+\)', s[i:])
+                elif m: # re.match(r'(\(%o\d+\))(.*)', s[i:])
                     if c.startswith('? ') or self.in_help:
                         l_output = 0
                         s = '/* HELP: */\n' + s[:i].rstrip()
@@ -475,10 +474,10 @@ class Maxima(object):
                         l_output = 0
                         s = '/* EXAMPLE: */\n' + s[:i].rstrip()
                     else:
-                        s = self.modify_output(s[i + m.end():])
+                        s = self.modify_output(m[2])
                         l_output = len(s)
                         if not replace:
-                            s = '/* ' + m[0] + ': */\n' + s
+                            s = '/* ' + m[1] + ': */\n' + s
                 elif c.startswith(':lisp '):
                     if not replace:
                         l_output = len(s)
