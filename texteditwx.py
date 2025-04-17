@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/4/17 12:50:57 PM
+# 2025/4/17 9:19:54 PM
 
-version = '2025/4/17 12:50:57 PM'
+version = '2025/4/17 9:19:54 PM'
 
 import sys
 
@@ -352,6 +352,8 @@ class Maxima(object):
                     break
 
     def expect(self, pattern, timeout = -1):
+        # if timeout = -1, default value (30 s) is used.
+        # if timeout = None, timeout never occures.
         try:
             self.maxima.expect(pattern, timeout)
             if sys.version_info.major > 2:
@@ -376,7 +378,7 @@ class Maxima(object):
             raise
 
     def send_commands(self, commands, replace = False):
-        debug = False
+        debug = True
         if debug:
             print('send_commands')
         if len(self.commands_list) > 0:
@@ -521,7 +523,7 @@ class Maxima(object):
 
     @staticmethod
     def remove_redundant_parentheses(s):
-        debug = False
+        debug = True
         if debug:
             print('remove_redundant_parentheses')
             print('    initial string = "{}"'.format(s))
