@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/4/17 9:19:54 PM
+# 2025/4/23 10:18:38 AM
 
-version = '2025/4/17 9:19:54 PM'
+version = '2025/4/23 10:18:38 AM'
 
 import sys
 
@@ -114,8 +114,8 @@ def time_str_a_is_newer_than_b(a, b):
 def correct_file_name_in_unicode(file_name):
     if sys.version_info.major <= 2 and type(file_name) is str:
         file_name = file_name.decode('UTF-8')
-    if file_name == u'':
-        return u''
+    if file_name == '':
+        return ''
     file_name = os.path.normpath(file_name.strip())
     if sys.platform == 'darwin':
         # 濁点なし文字と濁点に分離されている文字->濁点付きの文字
@@ -123,7 +123,7 @@ def correct_file_name_in_unicode(file_name):
     elif sys.platform == 'win32':
         # os.path.normpath should be done prior to replace(os.sep, os.altsep)
         file_name = file_name.replace(os.sep, os.altsep)
-    elif file_name.startswith(u'file:'):
+    elif file_name.startswith('file:'):
         file_name = file_name[5:]
     return file_name # unicode
 
@@ -378,7 +378,7 @@ class Maxima(object):
             raise
 
     def send_commands(self, commands, replace = False):
-        debug = True
+        debug = False
         if debug:
             print('send_commands')
         if len(self.commands_list) > 0:
@@ -523,7 +523,7 @@ class Maxima(object):
 
     @staticmethod
     def remove_redundant_parentheses(s):
-        debug = True
+        debug = False
         if debug:
             print('remove_redundant_parentheses')
             print('    initial string = "{}"'.format(s))
@@ -608,8 +608,8 @@ class Maxima(object):
                     if debug:
                         print('    function = "{}", '.format(m[3]))
                     r += s[:m.end()]
-                    inside, _, s =  Maxima.remove_redundant_parentheses(s[m.end():])
-                    if m[3] == 'diff' and inside.endswith(',1') and inside[:-2].find(',') == -1:
+                    inside, _, s = Maxima.remove_redundant_parentheses(s[m.end():])
+                    if m[3] == 'diff' and inside.endswith(',1') and inside[:-2].count(',') == 1:
                         r += inside[:-2] + ')'
                     else:
                         r += inside + ')'
@@ -805,7 +805,7 @@ class MyTextCtrl(wx.TextCtrl):
             size = wx.DefaultSize, style = 0, font = None):
         if sys.platform == 'win32' and value == wx.EmptyString:
             # Font is never reflected as long as value is empty
-            super(MyTextCtrl, self).__init__(parent, id, u' ', pos, size, style)
+            super(MyTextCtrl, self).__init__(parent, id, ' ', pos, size, style)
             self.SetSelection(0, 1)
         else:
             super(MyTextCtrl, self).__init__(parent, id, value, pos, size, style)
@@ -816,7 +816,7 @@ class MyTextCtrl(wx.TextCtrl):
         self.maxima = Maxima()
         self.shortcut = False
         self.last_value = self.GetValue() # unicode
-        self.operations = [[0, u'', self.last_value]]
+        self.operations = [[0, '', self.last_value]]
         self.operation_index = len(self.operations)
         self.record_op = True
         self.completion_from = None
@@ -839,7 +839,7 @@ class MyTextCtrl(wx.TextCtrl):
             print('----- ' + sys._getframe().f_code.co_name + ' -----')
         v = self.GetValue() # unicode
         d = str_diff(self.last_value, v)
-        if d[1] == u'' and d[2] == u'':
+        if d[1] == '' and d[2] == '':
             self.operation_index = len(self.operations)
             return
         if self.debug:
@@ -847,23 +847,23 @@ class MyTextCtrl(wx.TextCtrl):
             print(u'{}: d = {}'.format(sys._getframe().f_code.co_name, [d[0], self.shorten(d[1]), self.shorten(d[2])]))
         l = self.operations[-1]
         if (self.operation_index == len(self.operations) and
-            l[1] == u'' and d[1] == u'' and len(d[2]) == 1 and l[0] + len(l[2]) == d[0]):
-            #                                  l[0]    l[0] + len(l[2])
-            #                                   |             |
-            # l: [i_l, u'', u'aaaaaaaaaaaaaa']  aaaaaaaaaaaaaa|
-            # d: [i_d, u'', u'a'             ]                a
-            #                                                 |
-            #                                                d[0]
+            l[1] == '' and d[1] == '' and len(d[2]) == 1 and l[0] + len(l[2]) == d[0]):
+            #                                l[0]    l[0] + len(l[2])
+            #                                 |             |
+            # l: [i_l, '', 'aaaaaaaaaaaaaa']  aaaaaaaaaaaaaa|
+            # d: [i_d, '', 'a'             ]                a
+            #                                               |
+            #                                              d[0]
             l[2] += d[2]
         elif (self.operation_index == len(self.operations) and
-            l[2] == u'' and d[2] == u'' and len(d[1]) == 1 and d[0] + len(d[1]) == l[0]):
-            #                                   l[0]
-            #                                    |
-            # l: [i_l, u'aaaaaaaaaaaaaa', u'']   aaaaaaaaaaaaaa
-            # d: [i_d, u'a',              u'']  a|
-            #                                   ||
-            #                                  /  \
-            #                               d[0]  d[0] + len(d[1])
+            l[2] == '' and d[2] == '' and len(d[1]) == 1 and d[0] + len(d[1]) == l[0]):
+            #                                 l[0]
+            #                                  |
+            # l: [i_l, 'aaaaaaaaaaaaaa', '']   aaaaaaaaaaaaaa
+            # d: [i_d, 'a',              '']  a|
+            #                                 ||
+            #                                /  \
+            #                             d[0]  d[0] + len(d[1])
             l[0] = d[0]
             l[1] = d[1] + l[1]
         else:
@@ -1160,7 +1160,7 @@ class MyTextCtrl(wx.TextCtrl):
                 commands = commands[m.end():]
                 self.Remove(i, i + m.end(), record_op = False)
                 j -= m.end()
-            if commands == u'':
+            if commands == '':
                 return
             elif commands[-1] not in u';$':
                 self.SetInsertionPoint(j)
@@ -1550,16 +1550,16 @@ class TableForFind(MyTable):
 
     def GetValue(self, row, col):
         if col in (self.COL_ACTIVE, self.COL_RE):
-            return u'1' if self.data[row][col] else u''
+            return u'1' if self.data[row][col] else ''
         else:
-            return u'' if self.data[row][col] is None else self.data[row][col]
+            return '' if self.data[row][col] is None else self.data[row][col]
 
     def SetValue(self, row, col, value):
         if col in (self.COL_ACTIVE, self.COL_RE):
             self.data[row][col] = bool(value)
         else:
             value = value.decode('UTF-8') if sys.version_info.major <= 2 and type(value) is str else value
-            self.data[row][col] = None if value == u'' else value
+            self.data[row][col] = None if value == '' else value
 
     def Clear(self):
         for i in range(self.GetNumberRows()):
@@ -1583,7 +1583,7 @@ class TableForFind(MyTable):
 
 class GridWithCellToolTip(wx.grid.Grid):
     def __init__(self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.DefaultSize,
-        style = wx.WANTS_CHARS, name = u'', table = None):
+        style = wx.WANTS_CHARS, name = '', table = None):
         wx.grid.Grid.__init__(self, parent, id, pos, size, style, name)
         self.table = table
         if self.table is not None:
@@ -1615,7 +1615,7 @@ class GridWithCellToolTip(wx.grid.Grid):
                 col = min(c.Col, len(self.table.tooltips[0]) - 1)
                 s = self.table.tooltips[row][col]
                 if s is None:
-                    s = u''
+                    s = ''
                 event.GetEventObject().SetToolTip(s)
         except:
 #            print(sys.exc_info())
@@ -1872,10 +1872,10 @@ class DialogFind(wx.Dialog):
         row = self.grid_find.GetGridCursorRow()
         t.data[row][t.COL_RE] = True
         t.data[row][t.COL_FIND] = (r'([\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#]|^)' +
-            (u'' if t.data[row][t.COL_FIND] is None else t.data[row][t.COL_FIND]) +
+            ('' if t.data[row][t.COL_FIND] is None else t.data[row][t.COL_FIND]) +
             r'([\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#]|$)')
         t.data[row][t.COL_REPLACE] = (r'\1' +
-            (u'' if t.data[row][t.COL_REPLACE] is None else t.data[row][t.COL_REPLACE]) +
+            ('' if t.data[row][t.COL_REPLACE] is None else t.data[row][t.COL_REPLACE]) +
             r'\2')
         self.grid_find.ForceRefresh()
 
@@ -1984,17 +1984,17 @@ class DialogFind(wx.Dialog):
                 if m != -1:
                     found.append([m, m + len(i[self.grid_find.table.COL_FIND]), i, n])
                     n += 1
-        v1 = u''
+        v1 = ''
         while len(found) > 0:
             found.sort(key = lambda x: (x[0], x[3]))
             start, end, i = found[0][0], found[0][1], found[0][2]
             if i[self.grid_find.table.COL_RE]:
                 v1 += v0[:start] + re.sub(i[self.grid_find.table.COL_FIND],
-                    u'' if i[self.grid_find.table.COL_REPLACE] is None else i[self.grid_find.table.COL_REPLACE],
+                    '' if i[self.grid_find.table.COL_REPLACE] is None else i[self.grid_find.table.COL_REPLACE],
                     v0[start:end])
             elif self.checkBox_ignore_case.GetValue():
                 v1 += v0[:start] + re.sub(i[self.grid_find.table.COL_FIND],
-                    u'' if i[self.grid_find.table.COL_REPLACE] is None else i[self.grid_find.table.COL_REPLACE],
+                    '' if i[self.grid_find.table.COL_REPLACE] is None else i[self.grid_find.table.COL_REPLACE],
                     v0[start:end], flags = re.IGNORECASE)
             else:
                 if i[self.grid_find.table.COL_REPLACE] is None:
@@ -2112,7 +2112,7 @@ class DialogFind(wx.Dialog):
 
     def button_replaceOnButtonClick(self, event):
         s = self.target.GetStringSelection()
-        if self.found is None or s == u'':
+        if self.found is None or s == '':
             return
         if self.found[2][self.grid_find.table.COL_RE]:
             m = re.match(self.found[2][self.grid_find.table.COL_FIND], s)
@@ -2801,7 +2801,7 @@ class FrameMain(wx.Frame):
         self.save_backup()
         if self.textCtrl_edit.IsModified():
             with wx.MessageDialog(self,
-                _(u'書類を保存しますか？') if self.filePicker.GetPath() == u''
+                _(u'書類を保存しますか？') if self.filePicker.GetPath() == ''
                     else _(u'書類を ') + self.filePicker.GetPath() + _(u' に保存しますか？'),
                 _(u'保存'), style = wx.YES_NO | wx.CANCEL | wx.ICON_EXCLAMATION) as md:
                 r = md.ShowModal()
@@ -2864,7 +2864,7 @@ class FrameMain(wx.Frame):
         self.textCtrl_edit.SetModified(False)
 
     def menuItem_saveOnMenuSelection(self, event):
-        if self.filePicker.GetPath() == u'':
+        if self.filePicker.GetPath() == '':
             self.menuItem_save_asOnMenuSelection(event)
         else:
             self.save_commands(self.filePicker.GetPath())
@@ -2936,12 +2936,12 @@ class FrameMain(wx.Frame):
 
     def menuItem_append_findOnMenuSelection(self, event):
         s = self.textCtrl_edit.GetStringSelection()
-        if s != u'':
+        if s != '':
             self.dialog_find.insert_find(0, s)
 
     def menuItem_append_replaceOnMenuSelection(self, event):
         s = self.textCtrl_edit.GetStringSelection()
-        if s != u'':
+        if s != '':
             self.dialog_find.insert_replace(0, s)
 
     def menuItem_left_shiftOnMenuSelection(self, event):
@@ -3116,14 +3116,14 @@ class FrameMain(wx.Frame):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('cyclic',
             u'周期境界\nconstant/polyMesh/boundaryで\nneighbourPatchを指定しないといけない．\n' +
             u'http://penguinitis.g1.xrea.com/study/OpenFOAM/cyclic/cyclic.html',
-            u'',
+            '',
             openfoam_src + 'finiteVolume/fields/fvPatchFields/constraint/cyclic'),
             indent = '\t'))
 
     def menuItem_OF_emptyOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('empty',
             u'1次元または2次元解析の時に，計算しない方向に垂直な面であることを示す．',
-            u'',
+            '',
             openfoam_src + 'finiteVolume/fields/fvPatchFields/constraint/empty'),
             indent = '\t'))
 
@@ -3149,7 +3149,7 @@ class FrameMain(wx.Frame):
     def menuItem_OF_fixedFluxPressureOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('fixedFluxPressure',
             u'速度境界条件を満足するようにp_rghを設定',
-            u'',
+            '',
             openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/fixedFluxPressure'),
             indent = '\t'))
 
@@ -3267,7 +3267,7 @@ class FrameMain(wx.Frame):
     def menuItem_OF_noSlipOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('noSlip',
             u'U = (0 0 0)に規定',
-            u'',
+            '',
             openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/noSlip'),
             indent = '\t'))
 
@@ -3322,7 +3322,7 @@ class FrameMain(wx.Frame):
     def menuItem_OF_slipOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('slip',
             u'非粘性流れの壁面境界条件',
-            u'',
+            '',
             openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/slip'),
             indent = '\t'))
 
@@ -3336,14 +3336,14 @@ class FrameMain(wx.Frame):
     def menuItem_OF_symmetryOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('symmetry',
             u'対称境界，境界が曲がっていても使える',
-            u'',
+            '',
             openfoam_src + 'finiteVolume/fields/fvPatchFields/constraint/symmetry'),
             indent = '\t'))
 
     def menuItem_OF_symmetryPlaneOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('symmetryPlane',
             u'対称境界，完全な平面にしか使えない',
-            u'',
+            '',
             openfoam_src + 'finiteVolume/fields/fvPatchFields/constraint/symmetryPlane'),
             indent = '\t'))
 
@@ -3390,7 +3390,7 @@ class FrameMain(wx.Frame):
     def menuItem_OF_zeroGradientOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('zeroGradient',
             u'こう配が0，境界での値 = セル中心での値にする．',
-            u'',
+            '',
             openfoam_src + 'finiteVolume/fields/fvPatchFields/basic/zeroGradient'),
             indent = '\t'))
 
