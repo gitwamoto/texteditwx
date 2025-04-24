@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/4/23 10:29:02 AM
+# 2025/4/24 9:29:03 AM
 
-version = '2025/4/23 10:29:02 AM'
+version = '2025/4/24 9:29:03 AM'
 
 import sys
 
@@ -553,7 +553,7 @@ class Maxima(object):
             if debug:
                 print('    while, s = "{}"'.format(s))
             #                1        1   2                                  2 3                          3
-            m = re.search(r'"(\\.|[^"])*"|(!!?|\^\^?|\*\*?|\.(?![0-9])|[/+\-])|([_A-Za-z][_A-Za-z0-9\[\]]*)?\(|\)', s)
+            m = re.search(r'"(\\.|[^"])*"|(!!?|\^\^?|\*\*?|\.(?![0-9])|[/+\-])|([_A-Za-z][_A-Za-z0-9\[\]]*)?\(|\)|\[|\]', s)
             if m:
                 if m[1]: # string enclosed in double quotes:
                     r += s[:m.end()]
@@ -603,6 +603,20 @@ class Maxima(object):
                     r += s[:m.end() - 1] # string before ')'
                     if debug:
                         print('    ), r = "{}", remainder = "{}"'.format(r, s[m.end():]))
+                    return r, min_priority, s[m.end():]
+                elif m[0] == '[':
+                    r += s[:m.end()] # string until '['
+                    if debug:
+                        print('    [')
+                        print('        r = "{}"'.format(r))
+                    inside, _, s = Maxima.remove_redundant_parentheses(s[m.end():])
+                    r += inside # including ']'
+                    if debug:
+                        print('        r = "{}"'.format(r))
+                elif m[0] == ']':
+                    r += s[:m.end()] # string until ']'
+                    if debug:
+                        print('    ], r = "{}", remainder = "{}"'.format(r, s[m.end():]))
                     return r, min_priority, s[m.end():]
                 else: # function
                     if debug:
