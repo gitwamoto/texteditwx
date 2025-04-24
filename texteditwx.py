@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/4/24 9:29:03 AM
+# 2025/4/24 8:36:40 PM
 
-version = '2025/4/24 9:29:03 AM'
+version = '2025/4/24 8:36:40 PM'
 
 import sys
 
