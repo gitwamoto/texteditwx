@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/4/24 8:36:40 PM
+# 2025/5/25 7:54:34 PM
 
-version = '2025/4/24 8:36:40 PM'
+version = '2025/5/25 7:54:34 PM'
 
 import sys
 
@@ -562,7 +562,9 @@ class Maxima(object):
                         print('    skip string, r = "{}"'.format(r))
                 elif m[2]: # operator
                     last_priority = priority[m[2]]
-                    if min_priority > last_priority:
+                    if r.endswith('^') and m[2] != '-': # not update min_priority in the case of a^-b
+                        pass
+                    elif min_priority > last_priority:
                         min_priority = last_priority
                     r += s[:m.end()]
                     s = s[m.end():]
@@ -653,7 +655,7 @@ class Maxima(object):
         s = self.remove_redundant_parentheses(s)[0]
         if debug:
             print('modify_output 2 = "{}"'.format(s))
-        s = resub_outside(((r'([^(^\[=])-', r'\1 - '),
+        s = resub_outside(((r'([^(^\[=,])-', r'\1 - '),
                            (r'([+=])', r' \1 '),
                            (',',  ', '),
                            (r'([^_A-Za-z](?:[0-9]+\.?|\.[0-9]+)[eb]) ([-+]) ([0-9])', r'\1\2\3')), # 1.0e + 10 -> 1.0e+10
