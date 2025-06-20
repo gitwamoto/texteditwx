@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/5/25 7:59:27 PM
+# 2025/6/20 10:43:40 AM
 
-version = '2025/5/25 7:59:27 PM'
+version = '2025/6/20 10:43:40 AM'
 
 import sys
 
@@ -562,7 +562,7 @@ class Maxima(object):
                         print('    skip string, r = "{}"'.format(r))
                 elif m[2]: # operator
                     last_priority = priority[m[2]]
-                    if r.endswith('^') and m[2] == '-': # not update min_priority in the case of a^-b
+                    if r.endswith('^') and s[0] == '-': # not update min_priority in the case of a^-b
                         pass
                     elif min_priority > last_priority:
                         min_priority = last_priority
