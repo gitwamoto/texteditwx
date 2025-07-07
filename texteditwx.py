@@ -521,9 +521,6 @@ class Maxima(object):
         self.last_input = '/* ' + self.last_input.strip() + ': */'
         return outputs, l_output # l_output is used for selection range in a display
 
-#integrate(((%e^(x/a) + %e^(-x/a))/2)^2, x, -l, l);
-#(%e^(-x/a))^2;
-
     @staticmethod
     def remove_redundant_parentheses(s):
         debug = False
