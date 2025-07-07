@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/7/7 11:20:39 AM
+# 2025/7/7 11:25:51 AM
 
-version = '2025/7/7 11:20:13 AM'
+version = '2025/7/7 11:25:51 AM'
 
 import sys
 
@@ -378,7 +378,7 @@ class Maxima(object):
             raise
 
     def send_commands(self, commands, replace = False):
-        debug = True
+        debug = False
         if debug:
             print('send_commands')
         if len(self.commands_list) > 0:
@@ -526,7 +526,7 @@ class Maxima(object):
 
     @staticmethod
     def remove_redundant_parentheses(s):
-        debug = True
+        debug = False
         if debug:
             print('remove_redundant_parentheses')
             print('    initial string = "{}"'.format(s))
