@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/6/20 10:43:40 AM
+# 2025/7/7 11:20:39 AM
 
-version = '2025/6/20 10:43:40 AM'
+version = '2025/7/7 11:20:13 AM'
 
 import sys
 
@@ -378,7 +378,7 @@ class Maxima(object):
             raise
 
     def send_commands(self, commands, replace = False):
-        debug = False
+        debug = True
         if debug:
             print('send_commands')
         if len(self.commands_list) > 0:
@@ -521,9 +521,12 @@ class Maxima(object):
         self.last_input = '/* ' + self.last_input.strip() + ': */'
         return outputs, l_output # l_output is used for selection range in a display
 
+#integrate(((%e^(x/a) + %e^(-x/a))/2)^2, x, -l, l);
+#(%e^(-x/a))^2;
+
     @staticmethod
     def remove_redundant_parentheses(s):
-        debug = False
+        debug = True
         if debug:
             print('remove_redundant_parentheses')
             print('    initial string = "{}"'.format(s))
@@ -583,10 +586,10 @@ class Maxima(object):
                     if m:
                         if debug:
                             print('        following operator = "{}"'.format(m[0]))
-                        if (last_priority <= inside_priority >= priority[m[0]] or
+                        if not r.endswith('%e^-') and (last_priority <= inside_priority >= priority[m[0]] or
                             inside_priority == priority['*'] and m[0] == '/'): # conversion (a*b)/c = a*b/c is done here
                             r += inside + s[:m.end()]
-                        else:
+                        else: # append parentheses in the case of %e^-(a*b)
                             r += '(' + inside + ')' + s[:m.end()]
                         last_priority = priority[m[0]]
                         if min_priority > last_priority:
@@ -594,10 +597,10 @@ class Maxima(object):
                         s = s[m.end():]
                     else: # no operator follows after a closing parenthesis
                         if debug:
-                            print('        no following operator')
-                        if last_priority <= inside_priority:
+                            print(f'        no following operator, r = {r}')
+                        if not r.endswith('%e^-') and last_priority <= inside_priority:
                             r += inside
-                        else:
+                        else: # append parentheses in the case of %e^-(a*b)
                             r += '(' + inside + ')'
                     if debug:
                         print('        r = "{}", min_priority = "{}"'.format(r, min_priority))
