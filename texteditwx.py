@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/8/7 8:50:41 PM
+# 2025/8/7 9:14:04 PM
 
-version = '2025/8/7 8:50:41 PM'
+version = '2025/8/7 9:14:04 PM'
 
 import sys
 
@@ -553,7 +553,7 @@ class Maxima(object):
             if debug:
                 print('    while, s = "{}"'.format(s))
             #                1        1   2                                  2 3                          3
-            m = re.search(r'"(\\.|[^"])*"|(!!?|\^\^?|\*\*?|\.(?![0-9])|[/+\-])|([_A-Za-z%][_A-Za-z0-9\[\]]*)?\(|\)|\[|\]', s)
+            m = re.search(r'"(\\.|[^"])*"|(!!?|\^\^?|\*\*?|\.(?![0-9])|[/+\-])|([_A-Za-z][_A-Za-z0-9\[\]]*)?\(|\)|\[|\]', s)
             if m:
                 if m[1]: # string enclosed in double quotes:
                     r += s[:m.end()]
@@ -583,7 +583,9 @@ class Maxima(object):
                     if m:
                         if debug:
                             print('        following operator = "{}"'.format(m[0]))
-                        if not r.endswith('%e^-') and (last_priority <= inside_priority >= priority[m[0]] or
+                        if not r.endswith('%e^-') and (
+                            (last_priority == priority['initial value'] or last_priority <= inside_priority) and
+                            inside_priority >= priority[m[0]] or
                             inside_priority == priority['*'] and m[0] == '/'): # conversion (a*b)/c = a*b/c is done here
                             r += inside + s[:m.end()]
                         else: # append parentheses in the case of %e^-(a*b)
