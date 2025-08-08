@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/8/7 9:14:04 PM
+# 2025/8/8 9:48:16 AM
 
-version = '2025/8/7 9:14:04 PM'
+version = '2025/8/8 9:48:16 AM'
 
 import sys
 
@@ -554,6 +554,9 @@ class Maxima(object):
                 print('    while, s = "{}"'.format(s))
             #                1        1   2                                  2 3                          3
             m = re.search(r'"(\\.|[^"])*"|(!!?|\^\^?|\*\*?|\.(?![0-9])|[/+\-])|([_A-Za-z][_A-Za-z0-9\[\]]*)?\(|\)|\[|\]', s)
+            # 1: string enclosed in double quote
+            # 2: operator
+            # 3: function
             if m:
                 if m[1]: # string enclosed in double quotes:
                     r += s[:m.end()]
