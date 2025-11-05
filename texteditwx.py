@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/8/8 9:48:16 AM
+# 2025/11/5 8:35:24 PM
 
-version = '2025/8/8 9:48:16 AM'
+version = '2025/11/5 8:35:24 PM'
 
 import sys
 
@@ -1892,7 +1892,7 @@ class DialogFind(wx.Dialog):
         t = self.grid_find.table
         row = self.grid_find.GetGridCursorRow()
         t.data[row][t.COL_RE] = True
-        t.data[row][t.COL_FIND] = (r'([\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#]|^)' +
+        t.data[row][t.COL_FIND] = (r'([\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#~]|^)' +
             ('' if t.data[row][t.COL_FIND] is None else t.data[row][t.COL_FIND]) +
             r'([\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#]|$)')
         t.data[row][t.COL_REPLACE] = (r'\1' +
