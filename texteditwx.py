@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/11/5 8:35:24 PM
+# 2025/11/6 11:08:53 AM
 
-version = '2025/11/5 8:35:24 PM'
+version = '2025/11/6 11:08:53 AM'
 
 import sys
 
@@ -1894,10 +1894,9 @@ class DialogFind(wx.Dialog):
         t.data[row][t.COL_RE] = True
         t.data[row][t.COL_FIND] = (r'([\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#~]|^)' +
             ('' if t.data[row][t.COL_FIND] is None else t.data[row][t.COL_FIND]) +
-            r'([\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#]|$)')
+            r'(?=[\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#]|$)')
         t.data[row][t.COL_REPLACE] = (r'\1' +
-            ('' if t.data[row][t.COL_REPLACE] is None else t.data[row][t.COL_REPLACE]) +
-            r'\2')
+            ('' if t.data[row][t.COL_REPLACE] is None else t.data[row][t.COL_REPLACE]))
         self.grid_find.ForceRefresh()
 
     def button_colorizeOnButtonClick(self, event):
