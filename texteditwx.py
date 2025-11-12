@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/11/6 11:08:53 AM
+# 2025/11/12 4:26:28 PM
 
-version = '2025/11/6 11:08:53 AM'
+version = '2025/11/12 4:26:28 PM'
 
 import sys
 
@@ -1892,11 +1892,12 @@ class DialogFind(wx.Dialog):
         t = self.grid_find.table
         row = self.grid_find.GetGridCursorRow()
         t.data[row][t.COL_RE] = True
-        t.data[row][t.COL_FIND] = (r'([\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#~]|^)' +
-            ('' if t.data[row][t.COL_FIND] is None else t.data[row][t.COL_FIND]) +
-            r'(?=[\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#]|$)')
-        t.data[row][t.COL_REPLACE] = (r'\1' +
-            ('' if t.data[row][t.COL_REPLACE] is None else t.data[row][t.COL_REPLACE]))
+#        t.data[row][t.COL_FIND] = (r'([\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#~]|^)' +
+#            ('' if t.data[row][t.COL_FIND] is None else t.data[row][t.COL_FIND]) +
+#            r'(?=[\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#]|$)')
+#        t.data[row][t.COL_REPLACE] = (r'\1' +
+#            ('' if t.data[row][t.COL_REPLACE] is None else t.data[row][t.COL_REPLACE]))
+        t.data[row][t.COL_FIND] = (r'\b' + ('' if t.data[row][t.COL_FIND] is None else t.data[row][t.COL_FIND]) + r'\b')
         self.grid_find.ForceRefresh()
 
     def button_colorizeOnButtonClick(self, event):
