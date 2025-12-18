@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/11/12 4:26:28 PM
+# 2025/12/18 12:37:21 PM
 
-version = '2025/11/12 4:26:28 PM'
+version = '2025/12/18 12:37:21 PM'
 
 import sys
 
@@ -1454,6 +1454,8 @@ class MyTextCtrl(wx.TextCtrl):
             w = zenhan.h2z(v)
         elif method == 'hankaku':
             w = zenhan.z2h(v)
+        elif method == 'hankaku_alnum':
+            w = zenhan.z2h(v, mode = zenhan.ASCII | zenhan.DIGIT)
         if v != w:
             if s[0] != s[1]:
                 self.Replace(s[0], s[1], w)
@@ -2407,6 +2409,9 @@ class FrameMain(wx.Frame):
         self.menuItem_hankaku = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'半角にする'),
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_transform_chars.Append(self.menuItem_hankaku)
+        self.menuItem_hankaku_alnum = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'英数字を半角にする'),
+            wx.EmptyString, wx.ITEM_NORMAL)
+        self.menu_transform_chars.Append(self.menuItem_hankaku_alnum)
         self.menu_edit.AppendSubMenu(self.menu_transform_chars, _(u'文字種の変換'))
         self.menu_line_numbered = wx.MenuItem(self.menu_edit, wx.ID_ANY, _(u'先頭に行番号を挿入'),
             wx.EmptyString, wx.ITEM_NORMAL)
@@ -2708,6 +2713,7 @@ class FrameMain(wx.Frame):
         self.Bind(wx.EVT_MENU, self.menuItem_swap_caseOnMenuSelection, id = self.menuItem_swap_case.GetId())
         self.Bind(wx.EVT_MENU, self.menuItem_zenkakuOnMenuSelection, id = self.menuItem_zenkaku.GetId())
         self.Bind(wx.EVT_MENU, self.menuItem_hankakuOnMenuSelection, id = self.menuItem_hankaku.GetId())
+        self.Bind(wx.EVT_MENU, self.menuItem_hankaku_alnumOnMenuSelection, id = self.menuItem_hankaku_alnum.GetId())
         self.Bind(wx.EVT_MENU, self.menuItem_line_numberedOnMenuSelection, id = self.menu_line_numbered.GetId())
         self.Bind(wx.EVT_MENU, self.menuItem_bracketOnMenuSelection, id = self.menuItem_bracket.GetId())
         self.Bind(wx.EVT_MENU, self.menuItem_completionOnMenuSelection, id = self.menuItem_completion.GetId())
@@ -2994,6 +3000,9 @@ class FrameMain(wx.Frame):
 
     def menuItem_hankakuOnMenuSelection(self, event):
         self.textCtrl_edit.transform_chars('hankaku')
+
+    def menuItem_hankaku_alnumOnMenuSelection(self, event):
+        self.textCtrl_edit.transform_chars('hankaku_alnum')
 
     def menuItem_line_numberedOnMenuSelection(self, event):
         self.textCtrl_edit.line_numbered(head = True, prefix = '', suffix = ': ')
