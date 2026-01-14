@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2025/12/18 12:37:21 PM
+# 2026/1/14 8:23:56 PM
 
 version = '2025/12/18 12:37:21 PM'
 
@@ -2794,7 +2794,7 @@ class FrameMain(wx.Frame):
             os.path.realpath(decode_if_necessary(__file__))), u'backup_texteditwx.txt')) # unicode
         if os.path.isfile(self.backup_path):
             with codecs.open(self.backup_path, 'r', encoding = 'UTF-8') as f:
-                backup = ast.literal_eval('{' + f.read() + '}')
+                backup = ast.literal_eval('{' + f.read() + '\n}') # '\n}'の'\n'は最終行がコメントの時に必要
         else:
             backup = {}
         backup.setdefault('find_data', None)
@@ -2816,7 +2816,7 @@ class FrameMain(wx.Frame):
     def save_backup(self):
         if os.path.isfile(self.backup_path):
             with open(self.backup_path, 'r') as f:
-                backup = ast.literal_eval('{' + f.read() + '}')
+                backup = ast.literal_eval('{' + f.read() + '\n}') # '\n}'の'\n'は最終行がコメントの時に必要
         else:
             backup = {}
         backup['find_data'] = self.dialog_find.grid_find.table.DataString()
