@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/1/14 8:23:56 PM
+# 2026/2/10 6:51:08 PM
 
-version = '2025/12/18 12:37:21 PM'
+version = '2026/2/10 6:51:08 PM'
 
 import sys
 
@@ -834,6 +834,7 @@ class MyTextCtrl(wx.TextCtrl):
         self.escape_from_shortcut_function = None
         if self.font is not None:
             self.SetFont(self.font)
+            self.SetDefaultStyle(wx.TextAttr(wx.NullColour, font = self.font))
         self.maxima = Maxima()
         self.shortcut = False
         self.last_value = self.GetValue() # unicode
@@ -843,8 +844,9 @@ class MyTextCtrl(wx.TextCtrl):
         self.completion_from = None
         self.completion_candidates = []
         self.completion_index = 0
-        self.Bind(wx.EVT_TEXT, self.OnText)
-        self.Bind(wx.EVT_CHAR_HOOK, self.OnCharHook)
+        self.Bind(wx.EVT_TEXT, self.OnText) # テキストボックスの内容が書き換わった後に発生
+        self.Bind(wx.EVT_CHAR_HOOK, self.OnCharHook) # キーが押された瞬間，コントロールに届く前に発生
+        self.Bind(wx.EVT_TEXT_PASTE, self.OnPaste) # テキストが貼り付けられる直前
         if sys.platform == 'darwin':
             try:
                 self.OSXDisableAllSmartSubstitutions()
@@ -954,6 +956,7 @@ class MyTextCtrl(wx.TextCtrl):
             self.record_operation()
         if self.font is not None:
             self.SetFont(self.font)
+            self.SetDefaultStyle(wx.TextAttr(wx.NullColour, font = self.font))
         self.SetModified(True)
 
     def insert_shortcut(self, prefix, postfix, selection_wo_original, find = None, replace = None, record_op = True):
@@ -1052,6 +1055,17 @@ class MyTextCtrl(wx.TextCtrl):
             event.Skip()
             if self.completion_from is not None and event.GetModifiers() != wx.MOD_SHIFT:
                 self.completion_from = None
+
+    def OnPaste(self, event):
+        # 貼り付け時はIMEが絡まないので、これまで通りプレーンテキスト化
+        if wx.TheClipboard.Open():
+            data = wx.TextDataObject()
+            if wx.TheClipboard.GetData(data):
+                self.WriteText(data.GetText())
+            wx.TheClipboard.Close()
+        if self.font is not None:
+            self.SetFont(self.font)
+            self.SetDefaultStyle(wx.TextAttr(wx.NullColour, font = self.font))
 
     def Undo(self):
         if self.debug:
@@ -1331,7 +1345,7 @@ class MyTextCtrl(wx.TextCtrl):
             print('----- ' + sys._getframe().f_code.co_name + ' -----')
         self.SetStyle(0, len(self.GetValue()), wx.TextAttr(wx.BLACK, wx.WHITE))
         if self.font is not None:
-            self.SetFont(self.font)
+            self.SetDefaultStyle(wx.TextAttr(wx.NullColour, font = self.font))
 
     def re_sub_in_top_level(self, pattern, repl, parentheses = None, literals = None, literal_escape = ''):
         if self.debug:
@@ -1359,6 +1373,9 @@ class MyTextCtrl(wx.TextCtrl):
         if s[1] == -1:
             s[1] = len(v)
         v = re.sub(r'(^|\n)', r'\1' + indenter, v[s[0]:s[1]])
+        if self.font is not None:
+            self.SetFont(self.font)
+            self.SetDefaultStyle(wx.TextAttr(wx.NullColour, font = self.font))
         self.Replace(s[0], s[1], v)
         self.SetSelection(s[0], s[0] + len(v))
 
@@ -1375,6 +1392,9 @@ class MyTextCtrl(wx.TextCtrl):
             v = re.sub(r'(^|\n)[^\n]', r'\1', v[s[0]:s[1]])
         else:
             v = re.sub(r'(^|\n)' + indenter, r'\1', v[s[0]:s[1]])
+        if self.font is not None:
+            self.SetFont(self.font)
+            self.SetDefaultStyle(wx.TextAttr(wx.NullColour, font = self.font))
         self.Replace(s[0], s[1], v)
         self.SetSelection(s[0], s[0] + len(v))
 
@@ -2179,9 +2199,13 @@ class FrameMain(wx.Frame):
         self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
         self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
 
+#        font = wx.Font(pointSize = 12, family = wx.FONTFAMILY_TELETYPE, style = wx.FONTSTYLE_NORMAL,
+#            weight = wx.FONTWEIGHT_NORMAL, underline = False, faceName = (u'ＭＳ ゴシック' if sys.platform == 'win32'
+#            else ('Monaco' if sys.platform == 'darwin' else 'Ubuntu Mono')))
         font = wx.Font(pointSize = 12, family = wx.FONTFAMILY_TELETYPE, style = wx.FONTSTYLE_NORMAL,
-            weight = wx.FONTWEIGHT_NORMAL, underline = False, faceName = (u'MS ゴシック' if sys.platform == 'win32'
+            weight = wx.FONTWEIGHT_NORMAL, underline = False, faceName = (u'ＭＳ ゴシック' if sys.platform == 'win32'
             else ('Monaco' if sys.platform == 'darwin' else 'Ubuntu Mono')))
+        font.SetFamily(wx.FONTFAMILY_TELETYPE)
 
         bSizer1 = wx.BoxSizer(wx.VERTICAL)
 
@@ -2240,6 +2264,7 @@ class FrameMain(wx.Frame):
         self.textCtrl_affect = wx.TextCtrl(self, wx.ID_ANY, u'2', wx.DefaultPosition, wx.Size(60, -1), 0)
         if font is not None:
             self.textCtrl_affect.SetFont(font)
+            self.textCtrl_affect.SetDefaultStyle(wx.TextAttr(wx.NullColour, font = font))
         bSizer2.Add(self.textCtrl_affect, 0, wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.BOTTOM | wx.RIGHT, 5)
 
         self.button_reciprocal = wx.Button(self, wx.ID_ANY, u'⇅', wx.DefaultPosition, wx.Size(45, -1), 0)
@@ -2266,6 +2291,7 @@ class FrameMain(wx.Frame):
         self.textCtrl_shift = wx.TextCtrl(self, wx.ID_ANY, u'# ', wx.DefaultPosition, wx.Size(60, -1), 0)
         if font is not None:
             self.textCtrl_shift.SetFont(font)
+            self.textCtrl_shift.SetDefaultStyle(wx.TextAttr(wx.NullColour, font = font))
         self.textCtrl_shift.SetToolTip(_(u'タブには\\t，改行には\\nを入力して下さい．'))
         bSizer2.Add(self.textCtrl_shift, 0, wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.BOTTOM | wx.RIGHT, 5)
 
@@ -2295,6 +2321,7 @@ class FrameMain(wx.Frame):
         # wx.TE_RICH is required to avoid a problem associated with CR+LF
         if font is not None:
             self.textCtrl_help.SetFont(font)
+            self.textCtrl_help.SetDefaultStyle(wx.TextAttr(wx.NullColour, font = font))
         bSizer2.Add(self.textCtrl_help, 1, wx.ALL | wx.EXPAND, 5)
         self.panel2.SetSizer(bSizer2)
         self.panel2.Layout()
