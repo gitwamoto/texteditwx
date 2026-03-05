@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/2/10 6:51:08 PM
+# 2026/3/5 9:03:25 PM
 
-version = '2026/2/10 6:51:08 PM'
+version = '2026/3/5 9:03:25 PM'
 
 import sys
 
@@ -3300,7 +3300,7 @@ class FrameMain(wx.Frame):
 
     def menuItem_OF_nutkWallFunctionOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('nutkWallFunction',
-            u'壁面に対するnutの境界条件，標準的\n' +
+            u'nutの壁面境界条件，標準的\n' +
             u'yPlus = C_mu^0.25*sqrt(k)*y/nuから格子中心のyPlusを求め，\n対数則領域内に格子中心があるかどうかを判断する．\n' +
             u'ある場合，対数速度分布から得られる壁面せん断応力\ntau_w = mu*kappa*yPlus/log(E*yPlus)*(u/y)\n' +
             u'になるように乱流粘性係数を設定する．\nhttps://www.slideshare.net/fumiyanozaki96/openfoam-36426892',
@@ -3311,7 +3311,7 @@ class FrameMain(wx.Frame):
 
     def menuItem_OF_nutUWallFunctionOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('nutUWallFunction',
-            u'壁面に対するnutの境界条件\n' +
+            u'nutの壁面境界条件\n' +
             u'格子中心での速度u，壁からの距離y，対数速度分布から得られる関係\n' +
             u'yPlus*log(E*yPlus) = kappa*u*y/nuから格子中心のyPlusを求め，\n対数則領域内に格子中心があるかどうかを判断する．\n' +
             u'ある場合，対数速度分布から得られる壁面せん断応力\ntau_w = mu*kappa*yPlus/log(E*yPlus)*(u/y)\n' +
@@ -3330,7 +3330,7 @@ class FrameMain(wx.Frame):
 
     def menuItem_OF_omegaWallFunctionOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('omegaWallFunction',
-            u'壁面に対するomegaの境界条件',
+            u'omegaの壁面境界条件',
             u'value $internalField; // 実際には使わないけど必要',
             openfoam_src + 'TurbulenceModels/turbulenceModels/derivedFvPatchFields/wallFunctions/' +
             'omegaWallFunctions/omegaWallFunction'),
