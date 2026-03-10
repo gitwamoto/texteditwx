@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/3/5 9:03:25 PM
+# 2026/3/10 12:23:31 PM
 
-version = '2026/3/5 9:03:25 PM'
+version = '2026/3/10 12:23:31 PM'
 
 import sys
 
@@ -527,6 +527,8 @@ class Maxima(object):
         if debug:
             print('remove_redundant_parentheses')
             print('    initial string = "{}"'.format(s))
+        if len(s) == 0:
+            return '', 0, ''
         priority = {
             'initial value': 1000,
             '!!': 100,
@@ -540,8 +542,6 @@ class Maxima(object):
             '+':   50, # a + b*c = a + (b*c)
             '-':   50, # a + b*c = a + (b*c)
             }
-        if len(s) == 0:
-            return '', 0, ''
         if s[0] == '-':
             min_priority = last_priority = priority['*']
             r = '-'
@@ -549,98 +549,103 @@ class Maxima(object):
         else:
             min_priority = last_priority = priority['initial value']
             r = ''
+        pattern = re.compile(
+            r'(?P<string>"([^"\\]|\\.)*")' '|'
+            r'(?P<operator>!!?|\^\^?|\*\*?|\.(?![0-9])|[/+\-])' '|'
+            r'(?P<function>(?P<function_name>[a-zA-Z_][a-zA-Z_0-9\[\]]*)\()' '|' # parenthesis_startよりも前！
+            r'(?P<parenthesis_start>\()' '|' # functionよりも後！
+            r'(?P<parenthesis_end>\))' '|'
+            r'(?P<bracket_start>\[)' '|'
+            r'(?P<bracket_end>\])'
+            )
+        operator_pattern = re.compile(r'!!?|\^\^?|\*\*?|\.(?![0-9])|[/+\-]')
         while len(s) > 0:
             if debug:
                 print('    while, s = "{}"'.format(s))
-            #                1        1   2                                  2 3                          3
-            m = re.search(r'"(\\.|[^"])*"|(!!?|\^\^?|\*\*?|\.(?![0-9])|[/+\-])|([_A-Za-z][_A-Za-z0-9\[\]]*)?\(|\)|\[|\]', s)
-            # 1: string enclosed in double quote
-            # 2: operator
-            # 3: function
-            if m:
-                if m[1]: # string enclosed in double quotes:
-                    r += s[:m.end()]
-                    s = s[m.end():]
-                    if debug:
-                        print('    skip string, r = "{}"'.format(r))
-                elif m[2]: # operator
-                    last_priority = priority[m[2]]
-                    if r.endswith('^') and s[0] == '-': # not update min_priority in the case of a^-b
-                        pass
-                    elif min_priority > last_priority:
-                        min_priority = last_priority
-                    r += s[:m.end()]
-                    s = s[m.end():]
-                    if debug:
-                        print('    operator {}, min_priority = {}'.format(m[2], min_priority))
-                elif m[0] == '(':
-                    r += s[:m.end() - 1] # string before '('
-                    if debug:
-                        print('    (')
-                        print('        r = "{}"'.format(r))
-                    inside, inside_priority, s = Maxima.remove_redundant_parentheses(s[m.end():])
-                    if debug:
-                        print('        inside = "{}", inside_priority = {}, s = "{}"'.format(
-                            inside, inside_priority, s))
-                    m = re.match(r'!!?|\^\^?|\*\*?|\.(?![0-9])|[/+\-]', s)
-                    if m:
-                        if debug:
-                            print('        following operator = "{}"'.format(m[0]))
-                        if not r.endswith('%e^-') and (
-                            (last_priority == priority['initial value'] or last_priority <= inside_priority) and
-                            inside_priority >= priority[m[0]] or
-                            inside_priority == priority['*'] and m[0] == '/'): # conversion (a*b)/c = a*b/c is done here
-                            r += inside + s[:m.end()]
-                        else: # append parentheses in the case of %e^-(a*b)
-                            r += '(' + inside + ')' + s[:m.end()]
-                        last_priority = priority[m[0]]
-                        if min_priority > last_priority:
-                            min_priority = last_priority
-                        s = s[m.end():]
-                    else: # no operator follows after a closing parenthesis
-                        if debug:
-                            print(f'        no following operator, r = {r}')
-                        if not r.endswith('%e^-') and last_priority <= inside_priority:
-                            r += inside
-                        else: # append parentheses in the case of %e^-(a*b)
-                            r += '(' + inside + ')'
-                    if debug:
-                        print('        r = "{}", min_priority = "{}"'.format(r, min_priority))
-                elif m[0] == ')':
-                    r += s[:m.end() - 1] # string before ')'
-                    if debug:
-                        print('    ), r = "{}", remainder = "{}"'.format(r, s[m.end():]))
-                    return r, min_priority, s[m.end():]
-                elif m[0] == '[':
-                    r += s[:m.end()] # string until '['
-                    if debug:
-                        print('    [')
-                        print('        r = "{}"'.format(r))
-                    inside, _, s = Maxima.remove_redundant_parentheses(s[m.end():])
-                    r += inside # including ']'
-                    if debug:
-                        print('        r = "{}"'.format(r))
-                elif m[0] == ']':
-                    r += s[:m.end()] # string until ']'
-                    if debug:
-                        print('    ], r = "{}", remainder = "{}"'.format(r, s[m.end():]))
-                    return r, min_priority, s[m.end():]
-                else: # function
-                    if debug:
-                        print('    function = "{}", '.format(m[3]))
-                    r += s[:m.end()]
-                    inside, _, s = Maxima.remove_redundant_parentheses(s[m.end():])
-                    if m[3] == 'diff' and inside.endswith(',1') and inside[:-2].count(',') == 1:
-                        r += inside[:-2] + ')'
-                    else:
-                        r += inside + ')'
-                    if debug:
-                        print('    function, r = "{}", '.format(r))
-            else:
+            m = pattern.search(s)
+            if not m:
                 r += s
                 if debug:
                     print('    no operator/function/(, r = "{}"'.format(r))
                 break
+            if m.lastgroup == 'string':
+                r += s[:m.end()]
+                s = s[m.end():]
+                if debug:
+                    print('    skip string, r = "{}"'.format(r))
+            elif m.lastgroup == 'operator':
+                last_priority = priority[m.group()]
+                if r.endswith('^') and s[0] == '-': # not update min_priority in the case of a^-b
+                    pass
+                elif min_priority > last_priority:
+                    min_priority = last_priority
+                r += s[:m.end()]
+                s = s[m.end():]
+                if debug:
+                    print('    operator {}, min_priority = {}'.format(m.group(), min_priority))
+            elif m.lastgroup == 'function':
+                if debug:
+                    print('    function = "{}", '.format(m.group('function_name')))
+                r += s[:m.end()]
+                inside, _, s = Maxima.remove_redundant_parentheses(s[m.end():])
+                if m.group() == 'diff' and inside.endswith(',1') and inside[:-2].count(',') == 1:
+                    r += inside[:-2] + ')'
+                else:
+                    r += inside + ')'
+                if debug:
+                    print('    function, r = "{}", '.format(r))
+            elif m.lastgroup == 'parenthesis_start':
+                r += s[:m.end() - 1] # string before '('
+                if debug:
+                    print('    (')
+                    print('        r = "{}"'.format(r))
+                inside, inside_priority, s = Maxima.remove_redundant_parentheses(s[m.end():])
+                if debug:
+                    print('        inside = "{}", inside_priority = {}, s = "{}"'.format(
+                        inside, inside_priority, s))
+                m = operator_pattern.match(s)
+                if m:
+                    if debug:
+                        print('        following operator = "{}"'.format(m.group()))
+                    if not r.endswith('%e^-') and (
+                        (last_priority == priority['initial value'] or last_priority <= inside_priority) and
+                        inside_priority >= priority[m.group()] or
+                        inside_priority == priority['*'] and m.group() == '/'): # conversion (a*b)/c = a*b/c is done here
+                        r += inside + s[:m.end()]
+                    else: # append parentheses in the case of %e^-(a*b)
+                        r += '(' + inside + ')' + s[:m.end()]
+                    last_priority = priority[m.group()]
+                    if min_priority > last_priority:
+                        min_priority = last_priority
+                    s = s[m.end():]
+                else: # no operator follows after a closing parenthesis
+                    if debug:
+                        print(f'        no following operator, r = {r}')
+                    if not r.endswith('%e^-') and last_priority <= inside_priority:
+                        r += inside
+                    else: # append parentheses in the case of %e^-(a*b)
+                        r += '(' + inside + ')'
+                if debug:
+                    print('        r = "{}", min_priority = "{}"'.format(r, min_priority))
+            elif m.lastgroup == 'parenthesis_end':
+                r += s[:m.end() - 1] # string before ')'
+                if debug:
+                    print('    ), r = "{}", remainder = "{}"'.format(r, s[m.end():]))
+                return r, min_priority, s[m.end():]
+            elif m.lastgroup == 'bracket_start':
+                r += s[:m.end()] # string until '['
+                if debug:
+                    print('    [')
+                    print('        r = "{}"'.format(r))
+                inside, _, s = Maxima.remove_redundant_parentheses(s[m.end():])
+                r += inside # including ']'
+                if debug:
+                    print('        r = "{}"'.format(r))
+            elif m.lastgroup == 'bracket_end':
+                r += s[:m.end()] # string until ']'
+                if debug:
+                    print('    ], r = "{}", remainder = "{}"'.format(r, s[m.end():]))
+                return r, min_priority, s[m.end():]
         if debug:
             print('    return, r = "{}", min_priority = {}'.format(r, min_priority))
         return r, min_priority, ''
