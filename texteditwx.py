@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/3/10 12:23:31 PM
+# 2026/3/18 7:18:34 PM
 
-version = '2026/3/10 12:23:31 PM'
+version = '2026/3/18 7:18:34 PM'
 
 import sys
 
@@ -550,7 +550,7 @@ class Maxima(object):
             min_priority = last_priority = priority['initial value']
             r = ''
         pattern = re.compile(
-            r'(?P<string>"([^"\\]|\\.)*")' '|'
+            r'(?P<string>"(?:[^"\\]|\\.)*")' '|'
             r'(?P<operator>!!?|\^\^?|\*\*?|\.(?![0-9])|[/+\-])' '|'
             r'(?P<function>(?P<function_name>[a-zA-Z_][a-zA-Z_0-9\[\]]*)\()' '|' # parenthesis_startよりも前！
             r'(?P<parenthesis_start>\()' '|' # functionよりも後！
