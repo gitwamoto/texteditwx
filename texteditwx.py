@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/3/18 7:18:34 PM
+# 2026/3/27 9:05:52 AM
 
-version = '2026/3/18 7:18:34 PM'
+version = '2026/3/27 9:05:52 AM'
 
 import sys
 
@@ -552,7 +552,7 @@ class Maxima(object):
         pattern = re.compile(
             r'(?P<string>"(?:[^"\\]|\\.)*")' '|'
             r'(?P<operator>!!?|\^\^?|\*\*?|\.(?![0-9])|[/+\-])' '|'
-            r'(?P<function>(?P<function_name>[a-zA-Z_][a-zA-Z_0-9\[\]]*)\()' '|' # parenthesis_startよりも前！
+            r'(?:(?P<function>[a-zA-Z_][a-zA-Z_0-9\[\]]*)\()' '|' # parenthesis_startよりも前！
             r'(?P<parenthesis_start>\()' '|' # functionよりも後！
             r'(?P<parenthesis_end>\))' '|'
             r'(?P<bracket_start>\[)' '|'
@@ -583,9 +583,9 @@ class Maxima(object):
                 s = s[m.end():]
                 if debug:
                     print('    operator {}, min_priority = {}'.format(m.group(), min_priority))
-            elif m.lastgroup == 'function':
+            elif m.group('function') is not None:
                 if debug:
-                    print('    function = "{}", '.format(m.group('function_name')))
+                    print('    function = "{}", '.format(m.group('function')))
                 r += s[:m.end()]
                 inside, _, s = Maxima.remove_redundant_parentheses(s[m.end():])
                 if m.group() == 'diff' and inside.endswith(',1') and inside[:-2].count(',') == 1:
