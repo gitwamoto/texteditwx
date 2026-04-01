@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/3/27 9:05:52 AM
+# 2026/4/1 5:00:27 PM
 
-version = '2026/3/27 9:05:52 AM'
+version = '2026/4/1 4:59:32 PM'
 
 import sys
 
@@ -287,10 +287,11 @@ def resub_outside(pat_repl, string, inside_pattern = r'"(\\.|[^"])*"'):
     # r'"(\\.|[^"])*"' -> string enclosed in double quotes
     if not isinstance(pat_repl[0], (list, tuple)):
         pat_repl = (pat_repl,)
+    pat_inside = re.compile(inside_pattern)
     s = ''
     while len(string) > 0:
-        m = re.search(inside_pattern, string) # string which allows escape characters
-        if m:
+        m = pat_inside.search(string)
+        if m is not None:
             t = string[:m.start()]
             for p, r in pat_repl:
                 t = re.sub(p, r, t)
@@ -530,7 +531,7 @@ class Maxima(object):
         if len(s) == 0:
             return '', 0, ''
         priority = {
-            'initial value': 1000,
+            '=': 1000, # equation start point
             '!!': 100,
             '!':   90, # a!!! = (a!!)!
             '^^':  80, # a^^b! = a^^(b!)
@@ -547,22 +548,22 @@ class Maxima(object):
             r = '-'
             s = s[1:]
         else:
-            min_priority = last_priority = priority['initial value']
+            min_priority = last_priority = priority['=']
             r = ''
-        pattern = re.compile(
+        pat = re.compile(
             r'(?P<string>"(?:[^"\\]|\\.)*")' '|'
-            r'(?P<operator>!!?|\^\^?|\*\*?|\.(?![0-9])|[/+\-])' '|'
+            r'(?P<operator>!!?|\^\^?|\*\*?|\.(?![0-9])|[/+\-=])' '|' # 書き換えたらpat_operatorも書き換える
             r'(?:(?P<function>[a-zA-Z_][a-zA-Z_0-9\[\]]*)\()' '|' # parenthesis_startよりも前！
             r'(?P<parenthesis_start>\()' '|' # functionよりも後！
             r'(?P<parenthesis_end>\))' '|'
             r'(?P<bracket_start>\[)' '|'
             r'(?P<bracket_end>\])'
             )
-        operator_pattern = re.compile(r'!!?|\^\^?|\*\*?|\.(?![0-9])|[/+\-]')
+        pat_operator = re.compile(r'!!?|\^\^?|\*\*?|\.(?![0-9])|[/+\-=]') # 書き換えたらpat_operatorの?P<operator>も書き換える
         while len(s) > 0:
             if debug:
                 print('    while, s = "{}"'.format(s))
-            m = pattern.search(s)
+            m = pat.search(s)
             if not m:
                 r += s
                 if debug:
@@ -603,14 +604,14 @@ class Maxima(object):
                 if debug:
                     print('        inside = "{}", inside_priority = {}, s = "{}"'.format(
                         inside, inside_priority, s))
-                m = operator_pattern.match(s)
+                m = pat_operator.match(s)
                 if m:
                     if debug:
                         print('        following operator = "{}"'.format(m.group()))
                     if not r.endswith('%e^-') and (
-                        (last_priority == priority['initial value'] or last_priority <= inside_priority) and
-                        inside_priority >= priority[m.group()] or
-                        inside_priority == priority['*'] and m.group() == '/'): # conversion (a*b)/c = a*b/c is done here
+                        (last_priority == priority['='] or last_priority <= inside_priority) and
+                        (inside_priority >= priority[m.group()] or
+                        inside_priority == priority['*'] and m.group() == '/')): # conversion (a*b)/c = a*b/c is done here
                         r += inside + s[:m.end()]
                     else: # append parentheses in the case of %e^-(a*b)
                         r += '(' + inside + ')' + s[:m.end()]
