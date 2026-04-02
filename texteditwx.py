@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/4/1 5:00:27 PM
+# 2026/4/2 10:09:25 PM
 
-version = '2026/4/1 4:59:32 PM'
+version = '2026/4/2 10:09:25 PM'
 
 import sys
 
@@ -149,48 +149,50 @@ def str_diff(str1, str2):
     j += 1
     return [i, str1[i:l1 + j], str2[i:l2 + j]] # j < 0
 
-def str_range_between(s, selection, parentheses):
+def str_range_between(string, selection, parentheses):
+    # selection: (from, to) の形式のタプル
+    # example of parentheses: (('(', ')'), ('{', '}'), ('[', ']'))
     if not isinstance(parentheses[0], (tuple, list)):
         parentheses = (parentheses,)
-    s0 = s[:selection[0]]
+    w = max([max(len(i[0]), len(i[1])) for i in parentheses])
     l0 = selection[0] - 1
-    p = []
-    r = None
+    pair = None
     while l0 >= 0:
+        s = string[l0:l0 + w] # はみ出した範囲のぶんは空文字になる
         for i in parentheses:
-            if s0[l0:].startswith(i[1]):
-                p.append(i[0])
+            if i[1] is not None and s.startswith(i[1]):
+                l0 = str_range_between(string, (l0, l0), ((i[0], None),))
+                if l0 is None:
+                    return None
+                else:
+                    l0 = l0[0]
+            elif i[0] is not None and s.startswith(i[0]):
+                pair = i[1]
                 break
-            if s0[l0:].startswith(i[0]):
-                if len(p) == 0:
-                    r = i[1]
-                elif p[-1] == i[0]:
-                    p.pop()
-                break
-        if r is not None:
+        if pair is not None:
             break
         l0 -= 1
-    if r is None:
+    if pair is None:
         return None
     l1 = selection[1]
-    while l1 < len(s):
+    while l1 < len(string):
+        s = string[l1:l1 + w]
         for i in parentheses:
-            if s[l1:].startswith(i[0]):
-                p.append(i[1])
-                break
-            if s[l1:].startswith(i[1]):
-                if len(p) == 0:
-                    if i[1] == r:
-                        return [l0, l1 + len(r)]
-                    else:
-                        return None
-                if p[-1] == i[1]:
-                    p.pop()
-                break
+            if i[0] is not None and s.startswith(i[0]):
+                l1 = str_range_between(string, (l1 + len(i[0]), l1 + len(i[0])), ((None, i[1]),))
+                if l1 is None:
+                    return None
+                else:
+                    l1 = l1[1] - 1
+            elif s.startswith(pair):
+                return [l0, l1 + len(pair)]
         l1 += 1
     return None
 
-def str_levels(s, parentheses = None, literals = None, literal_escape = ''):
+def str_levels(string, parentheses = None, literals = None, literal_escape = ''):
+    # example of parentheses: (('(', ')'), ('{', '}'), ('[', ']'))
+    # example of iterals: (('"', '"'), (u"'", u"'"))
+    # example of literal_escape: '\\'
     if parentheses is None:
         parentheses = tuple()
     elif not isinstance(parentheses[0], (tuple, list)):
@@ -199,73 +201,62 @@ def str_levels(s, parentheses = None, literals = None, literal_escape = ''):
         literals = tuple()
     elif not isinstance(literals[0], (tuple, list)):
         literals = (literals,)
-    i = start = 0
-    literal = False
-    level = 0
-    levels = []
-    p = []
-    while i < len(s):
-        if literal:
-            for j in literals:
-                if (s[i:].startswith(j[1]) and
-                    (i < len(literal_escape) or s[i - len(literal_escape):i] != literal_escape) and
-                    len(p) > 0 and p[-1] == j[1]):
-                    i += len(j[1])
-                    if start < i:
-                        levels.append((start, i, level))
-                    p.pop()
-                    literal = False
-                    level -= 1
-                    start = i
-                    break
-            if not literal:
-                continue
-        else:
-            for j in literals:
-                if (s[i:].startswith(j[0]) and
-                    (i < len(literal_escape) or s[i - len(literal_escape):i] != literal_escape)):
-                    if start < i:
-                        levels.append((start, i, level))
-                    p.append(j[1])
-                    literal = True
-                    level += 1
-                    start = i
-                    i += len(j[0])
-                    break
-            if literal:
-                continue
-            i_is_increased = False
-            for j in parentheses:
-                if s[i:].startswith(j[0]):
-                    if start < i:
-                        levels.append((start, i, level))
-                    p.append(j[1])
-                    level += 1
-                    start = i
-                    i += len(j[0])
-                    i_is_increased = True
-                    break
-                if s[i:].startswith(j[1]):
-                    if len(p) > 0 and p[-1] == j[1]:
-                        i += len(j[1])
-                        if start < i:
-                            levels.append((start, i, level))
-                        p.pop()
-                        level -= 1
-                        start = i
-                        i_is_increased = True
-                        break
-            if i_is_increased:
-                continue
-        i += 1
-    if start < len(s):
-        levels.append((start, len(s), level))
-    return levels
+    w = max([max(len(i[0]), len(i[1])) for i in parentheses])
+    if len(literals) > 0:
+        w = max(w, max([max(len(i[0]), len(i[1])) for i in literals]), len(literal_escape))
 
-def line_numbered_str(s, head = True, prefix = '', suffix = ': '):
-    s_has_lf_in_last_line = s.endswith('\n')
-    s_has_cr = s.find('\r') != -1
-    lines = s.replace('\r', '').split('\n')
+    def str_levels_local(parentheses, literals, index, level):
+        start = index
+        levels = []
+        while index < len(string):
+            s = string[index:index + w] # はみ出した範囲のぶんは空文字になる
+            old_index = index
+            for i in literals:
+                if i[0] is not None and s.startswith(i[0]):
+                    levels.append([start, index, level])
+                    index += len(i[0])
+                    if index == len(string):
+                        l = [[old_index, index, level + 1]]
+                    else:
+                        l, index = str_levels_local((), ((None, i[1]),), index, level + 1)
+                        l[0][0] = old_index # 先頭のstartを修正
+                    levels.extend(l)
+                    start = index
+                elif s.startswith(literal_escape):
+                    index += len(literal_escape) + 1
+                elif s.startswith(i[1]):
+                    index += len(i[1])
+                    levels.append([start, index, level])
+                    if level > 0: # レベル0なら始まりが見つからずに，いきなり終わりが見つかったことになる
+                        return levels, index
+            for i in parentheses:
+                if i[0] is not None and s.startswith(i[0]):
+                    levels.append([start, index, level])
+                    index += len(i[0])
+                    if index == len(string):
+                        l = [[old_index, index, level + 1]]
+                    else:
+                        l, index = str_levels_local(parentheses, literals, index, level + 1)
+                        l[0][0] = old_index # 先頭のstartを修正
+                    levels.extend(l)
+                    start = index
+                elif s.startswith(i[1]):
+                    index += len(i[1])
+                    levels.append([start, index, level])
+                    if level > 0: # レベル0なら始まりが見つからずに，いきなり終わりが見つかったことになる
+                        return levels, index
+            if old_index == index:
+                index += 1
+        if start != min(index, len(string)):
+            levels.append([start, index, level])
+        return levels, index
+
+    return str_levels_local(parentheses, literals, 0, 0)[0]
+
+def line_numbered_str(string, head = True, prefix = '', suffix = ': '):
+    s_has_lf_in_last_line = string.endswith('\n')
+    s_has_cr = string.find('\r') != -1
+    lines = string.replace('\r', '').split('\n')
     n = len(lines)
     if s_has_lf_in_last_line:
         n += 1
@@ -872,8 +863,8 @@ class MyTextCtrl(wx.TextCtrl):
             self.operation_index = len(self.operations)
             return
         if self.debug:
-            print(u'{}: "{}" -> "{}"'.format(sys._getframe().f_code.co_name, self.shorten(self.last_value), self.shorten(v)))
-            print(u'{}: d = {}'.format(sys._getframe().f_code.co_name, [d[0], self.shorten(d[1]), self.shorten(d[2])]))
+            print('{}: "{}" -> "{}"'.format(sys._getframe().f_code.co_name, self.shorten(self.last_value), self.shorten(v)))
+            print('{}: d = {}'.format(sys._getframe().f_code.co_name, [d[0], self.shorten(d[1]), self.shorten(d[2])]))
         l = self.operations[-1]
         if (self.operation_index == len(self.operations) and
             l[1] == '' and d[1] == '' and len(d[2]) == 1 and l[0] + len(l[2]) == d[0]):
@@ -901,7 +892,7 @@ class MyTextCtrl(wx.TextCtrl):
                 del self.operations[:len(self.operations) - 100]
             self.operation_index = len(self.operations)
         if self.debug:
-            print(u'{}: operations = {}'.format(sys._getframe().f_code.co_name,
+            print('{}: operations = {}'.format(sys._getframe().f_code.co_name,
                 [[i[0], self.shorten(i[1]), self.shorten(i[2])] for i in self.operations]))
         self.last_value = v # unicode
 
@@ -991,68 +982,68 @@ class MyTextCtrl(wx.TextCtrl):
                     return
             elif event.GetModifiers() == wx.MOD_CONTROL:
                 if event.GetKeyCode() == wx.WXK_RIGHT:
-                    self.indent(u'    ')
+                    self.indent('    ')
                     return
                 elif event.GetKeyCode() == wx.WXK_LEFT:
-                    self.unindent(u'    ')
+                    self.unindent('    ')
                     return
                 elif event.GetKeyCode() == wx.WXK_DOWN:
-                    self.indent(u'\t')
+                    self.indent('\t')
                     return
                 elif event.GetKeyCode() == wx.WXK_UP:
-                    self.unindent(u'\t')
+                    self.unindent('\t')
                     return
         if self.shortcut:
             if event.GetKeyCode() == ord('A'):
                 #                      0123456789  0  12345
-                self.insert_shortcut(u'(partfrac(', u', x))', (13, 14))
+                self.insert_shortcut('(partfrac(', ', x))', (13, 14))
                 self.escape_from_shortcut_function(event)
             elif event.GetKeyCode() == ord('D'):
                 #                      012345  6  78901
-                self.insert_shortcut(u'(diff(', u', x))', (9, 10))
+                self.insert_shortcut('(diff(', ', x))', (9, 10))
                 self.escape_from_shortcut_function(event)
             elif event.GetKeyCode() == ord('E'):
                 #                      01234567  8  90
-                self.insert_shortcut(u'(expand(', u'))', (1, 10))
+                self.insert_shortcut('(expand(', '))', (1, 10))
             elif event.GetKeyCode() == ord('F'):
                 #                      01234567  8  90
-                self.insert_shortcut(u'(factor(', u'))', (1, 10))
+                self.insert_shortcut('(factor(', '))', (1, 10))
             elif event.GetKeyCode() == ord('H'):
-                self.WriteText(u'/* -------------------------------------------------- */\n')
+                self.WriteText('/* -------------------------------------------------- */\n')
             elif event.GetKeyCode() == ord('I'):
                 #                      01234567890  1  23456
-                self.insert_shortcut(u'(integrate(', u', x))', (14, 15))
+                self.insert_shortcut('(integrate(', ', x))', (14, 15))
                 self.escape_from_shortcut_function(event)
             elif event.GetKeyCode() == ord('L'):
                 #                      0123456  7  89
-                self.insert_shortcut(u'(float(', u'))', (1, 9))
+                self.insert_shortcut('(float(', '))', (1, 9))
             elif event.GetKeyCode() == ord('M'):
                 #                      0123456789  0  12
-                self.insert_shortcut(u'(multthru(', u'))', (1, 12))
+                self.insert_shortcut('(multthru(', '))', (1, 12))
             elif event.GetKeyCode() == ord('O'):
                 #                      0123456  7  89012
-                self.insert_shortcut(u'(solve(', u', x))', (10, 11))
+                self.insert_shortcut('(solve(', ', x))', (10, 11))
                 self.escape_from_shortcut_function(event)
             elif event.GetKeyCode() == ord('P'):
                 #                      0  1  2
-                self.insert_shortcut(u'(', u')', (1, 2))
+                self.insert_shortcut('(', ')', (1, 2))
             elif event.GetKeyCode() == ord('Q'):
                 #                      0123456789  0  123
-                self.insert_shortcut(u'(is(equal(', u')))', (1, 13), r'\s+=\s+', u', ')
+                self.insert_shortcut('(is(equal(', ')))', (1, 13), r'\s+=\s+', ', ')
             elif event.GetKeyCode() == ord('R'):
                 #                      01234  5  67890
-                self.insert_shortcut(u'(rat(', u', x))', (8, 9))
+                self.insert_shortcut('(rat(', ', x))', (8, 9))
                 self.escape_from_shortcut_function(event)
             elif event.GetKeyCode() == ord('S'):
                 #                      01234567890123456789012345678  9  0123
-                self.insert_shortcut(u'(trigsimp(fullratsimp(radcan(', u'))))', (1, 33))
+                self.insert_shortcut('(trigsimp(fullratsimp(radcan(', '))))', (1, 33))
             elif event.GetKeyCode() == ord('U'):
                 #                      0123456789012  3  45
-                self.insert_shortcut(u'(subst(a, x, ', u'))', (7, 11))
+                self.insert_shortcut('(subst(a, x, ', '))', (7, 11))
                 self.escape_from_shortcut_function(event)
             elif event.GetKeyCode() == ord('V'):
                 #                      0123  4  567890123
-                self.insert_shortcut(u'(ev(', u', x = a))', (7, 12))
+                self.insert_shortcut('(ev(', ', x = a))', (7, 12))
                 self.escape_from_shortcut_function(event)
             else:
                 event.Skip()
@@ -1084,9 +1075,9 @@ class MyTextCtrl(wx.TextCtrl):
         self.operation_index -= 1
         o = self.operations[self.operation_index]
         if self.debug:
-            print(u'{}: "{}" -> "{}"'.format(sys._getframe().f_code.co_name, self.shorten(o[2]), self.shorten(o[1])))
+            print('{}: "{}" -> "{}"'.format(sys._getframe().f_code.co_name, self.shorten(o[2]), self.shorten(o[1])))
             if o[2] != self.GetRange(o[0], o[0] + len(o[2])):
-                print(u'{}: !!!!! "{}" != "{}"'.format(sys._getframe().f_code.co_name, o[2], self.GetRange(o[0], o[0] + len(o[2]))))
+                print('{}: !!!!! "{}" != "{}"'.format(sys._getframe().f_code.co_name, o[2], self.GetRange(o[0], o[0] + len(o[2]))))
         self.Replace(o[0], o[0] + len(o[2]), o[1], record_op = False)
 
     def Redo(self):
@@ -1097,9 +1088,9 @@ class MyTextCtrl(wx.TextCtrl):
             return
         o = self.operations[self.operation_index]
         if self.debug:
-            print(u'{}: "{}" -> "{}"'.format(sys._getframe().f_code.co_name, self.shorten(o[1]), self.shorten(o[2])))
+            print('{}: "{}" -> "{}"'.format(sys._getframe().f_code.co_name, self.shorten(o[1]), self.shorten(o[2])))
             if o[1] != self.GetRange(o[0], o[0] + len(o[1])):
-                print(u'{}: !!!!! "{}" != "{}"'.format(sys._getframe().f_code.co_name, o[1], self.GetRange(o[0], o[0] + len(o[1]))))
+                print('{}: !!!!! "{}" != "{}"'.format(sys._getframe().f_code.co_name, o[1], self.GetRange(o[0], o[0] + len(o[1]))))
         self.Replace(o[0], o[0] + len(o[1]), o[2], record_op = False)
         self.operation_index += 1
 
@@ -1116,10 +1107,10 @@ class MyTextCtrl(wx.TextCtrl):
             char_code = 'CP932'
         if s.find('\r\n') != -1:
             return_code = 'CR+LF'
-            s = s.replace(u'\r\n', u'\n').replace(u'\r', u'\n')
+            s = s.replace('\r\n', '\n').replace('\r', '\n')
         elif s.find('\r') != -1:
             return_code = 'CR'
-            s = s.replace(u'\r', u'\n')
+            s = s.replace('\r', '\n')
         else:
             return_code = 'LF'
         self.SetValue(s)
@@ -1139,7 +1130,7 @@ class MyTextCtrl(wx.TextCtrl):
                 elif v[i] in r'/\%+-^_?:':
                     self.completion_from = i
                     break
-                elif v[i] not in u'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789':
+                elif v[i] not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789':
                     self.completion_from = i + 1
                     break
                 i -= 1
@@ -1187,12 +1178,12 @@ class MyTextCtrl(wx.TextCtrl):
             # c + d;\n
             # \n
             # d + e;
-            i = v.rfind(u'\n\n', 0, s[0])
+            i = v.rfind('\n\n', 0, s[0])
             if i == -1:
                 i = 0
             else:
                 i += 2
-            j = v.find(u'\n\n', s[0])
+            j = v.find('\n\n', s[0])
             if j == -1:
                 j = len(v.rstrip())
             commands = v[i:j]
@@ -1203,17 +1194,17 @@ class MyTextCtrl(wx.TextCtrl):
                 j -= m.end()
             if commands == '':
                 return
-            elif commands[-1] not in u';$':
+            elif commands[-1] not in ';$':
                 self.SetInsertionPoint(j)
-                self.WriteText(u';')
+                self.WriteText(';')
                 j += 1
             self.SetInsertionPoint(i)
-            self.WriteText(self.maxima.last_input + u'\n')
+            self.WriteText(self.maxima.last_input + '\n')
             self.SetInsertionPoint(j + len(self.maxima.last_input) + 1)
             try:
                 outputs, l_output = self.maxima.send_commands(commands)
                 if len(outputs) > 0:
-                    self.WriteText(u'\n\n' + u'\n\n'.join(outputs))
+                    self.WriteText('\n\n' + '\n\n'.join(outputs))
                     j = self.GetInsertionPoint()
                     self.SetSelection(j - l_output, j)
             except:
@@ -1222,7 +1213,7 @@ class MyTextCtrl(wx.TextCtrl):
         else:
             try:
                 outputs, l_output = self.maxima.send_commands(self.GetStringSelection(), replace = True)
-                self.Replace(s[0], s[1], u'\n'.join(outputs))
+                self.Replace(s[0], s[1], '\n'.join(outputs))
                 j = self.GetInsertionPoint()
                 self.SetSelection(j - l_output, j)
             except:
@@ -1236,9 +1227,9 @@ class MyTextCtrl(wx.TextCtrl):
         if s[0] != s[1]:
             ss = self.GetStringSelection()
             try:
-                v = u'\n'.join(self.maxima.send_commands(u'-(' + ss + u')', replace = True)[0])
-                if ss[0] == u'(' and ss[-1] == u')':
-                    v = u'(' + v + u')'
+                v = '\n'.join(self.maxima.send_commands('-(' + ss + ')', replace = True)[0])
+                if ss[0] == '(' and ss[-1] == ')':
+                    v = '(' + v + ')'
                 self.Replace(s[0], s[1], v)
                 self.SetSelection(s[0], s[0] + len(v))
             except:
@@ -1251,7 +1242,7 @@ class MyTextCtrl(wx.TextCtrl):
         s = self.GetSelection()
         if s[0] != s[1]:
             try:
-                v = u'\n'.join(self.maxima.send_commands(u'1/(' + self.GetStringSelection() + u')', replace = True)[0])
+                v = '\n'.join(self.maxima.send_commands('1/(' + self.GetStringSelection() + ')', replace = True)[0])
                 self.Replace(s[0], s[1], v)
                 self.SetSelection(s[0], s[0] + len(v))
             except:
@@ -1264,10 +1255,10 @@ class MyTextCtrl(wx.TextCtrl):
         s = list(self.GetSelection())
         if s[0] != s[1]:
             try:
-                v = u'\n'.join(self.maxima.send_commands(
-                    u'multthru(' + multiplier + u',' + self.GetStringSelection() + u')', replace = True)[0])
+                v = '\n'.join(self.maxima.send_commands(
+                    'multthru(' + multiplier + ',' + self.GetStringSelection() + ')', replace = True)[0])
                 w = self.GetStringSelection()
-                if w[0] == u'(' and w[-1] == u')':
+                if w[0] == '(' and w[-1] == ')':
                     s[0] += 1
                     s[1] -= 1
                 self.Replace(s[0], s[1], v)
@@ -1282,9 +1273,9 @@ class MyTextCtrl(wx.TextCtrl):
         s = list(self.GetSelection())
         if s[0] != s[1]:
             try:
-                v = u'\n'.join(self.maxima.send_commands(additive + u'+' + self.GetStringSelection(), replace = True)[0])
+                v = '\n'.join(self.maxima.send_commands(additive + '+' + self.GetStringSelection(), replace = True)[0])
                 w = self.GetStringSelection()
-                if w[0] == u'(' and w[-1] == u')':
+                if w[0] == '(' and w[-1] == ')':
                     s[0] += 1
                     s[1] -= 1
                 self.Replace(s[0], s[1], v)
@@ -1299,9 +1290,9 @@ class MyTextCtrl(wx.TextCtrl):
         s = list(self.GetSelection())
         if s[0] != s[1]:
             try:
-                v = u'\n'.join(self.maxima.send_commands(u'(' + self.GetStringSelection() + u')^(' + exponent + u')', replace = True)[0])
+                v = '\n'.join(self.maxima.send_commands('(' + self.GetStringSelection() + ')^(' + exponent + ')', replace = True)[0])
                 w = self.GetStringSelection()
-                if w[0] == u'(' and w[-1] == u')':
+                if w[0] == '(' and w[-1] == ')':
                     s[0] += 1
                     s[1] -= 1
                 self.Replace(s[0], s[1], v)
@@ -1316,9 +1307,9 @@ class MyTextCtrl(wx.TextCtrl):
         s = self.GetSelection()
         if s[0] != s[1]:
             v = self.GetStringSelection()
-            l = v.split(u'=')
+            l = v.split('=')
             if len(l) > 1:
-                v = u' = '.join([i.strip() for i in reversed(l)])
+                v = ' = '.join([i.strip() for i in reversed(l)])
                 self.Replace(s[0], s[1], v)
                 self.SetSelection(s[0], s[0] + len(v))
 
@@ -1328,8 +1319,8 @@ class MyTextCtrl(wx.TextCtrl):
         s = self.GetSelection()
         if s[0] != s[1]:
             v = self.GetStringSelection()
-            w = u'(' + u', integer, '.join([i.strip() for i in  v.split(u',')]) + u', integer)'
-            v = u'declare' + w + u'$ /* <-> remove' + w + u'$ */ facts();'
+            w = '(' + ', integer, '.join([i.strip() for i in  v.split(',')]) + ', integer)'
+            v = 'declare' + w + '$ /* <-> remove' + w + '$ */ facts();'
             self.Replace(s[0], s[1], v)
             self.SetInsertionPoint(s[0] + len(v))
 
@@ -1369,13 +1360,13 @@ class MyTextCtrl(wx.TextCtrl):
                 r += s[i[0]:i[1]]
         return r
 
-    def indent(self, indenter = u' '):
+    def indent(self, indenter = ' '):
         if self.debug:
             print('----- ' + sys._getframe().f_code.co_name + ' -----')
         s = list(self.GetSelection())
         v = self.GetValue()
-        s[0] = v.rfind(u'\n', 0, s[0]) + 1
-        s[1] = v.find(u'\n', max(s[1] - 1, s[0]))
+        s[0] = v.rfind('\n', 0, s[0]) + 1
+        s[1] = v.find('\n', max(s[1] - 1, s[0]))
         if s[1] == -1:
             s[1] = len(v)
         v = re.sub(r'(^|\n)', r'\1' + indenter, v[s[0]:s[1]])
@@ -1390,8 +1381,8 @@ class MyTextCtrl(wx.TextCtrl):
             print('----- ' + sys._getframe().f_code.co_name + ' -----')
         s = list(self.GetSelection())
         v = self.GetValue()
-        s[0] = v.rfind(u'\n', 0, s[0]) + 1
-        s[1] = v.find(u'\n', s[1])
+        s[0] = v.rfind('\n', 0, s[0]) + 1
+        s[1] = v.find('\n', s[1])
         if s[1] == -1:
             s[1] = len(v)
         if indenter is None:
@@ -1494,8 +1485,8 @@ class MyTextCtrl(wx.TextCtrl):
             print('----- ' + sys._getframe().f_code.co_name + ' -----')
         s = list(self.GetSelection())
         v = self.GetValue()
-        s[0] = v.rfind(u'\n', 0, s[0]) + 1
-        s[1] = v.find(u'\n', max(s[1] - 1, s[0]))
+        s[0] = v.rfind('\n', 0, s[0]) + 1
+        s[1] = v.find('\n', max(s[1] - 1, s[0]))
         if s[1] == -1:
             s[1] = len(v)
         v = line_numbered_str(v[s[0]:s[1]], head, prefix, suffix)
@@ -1599,7 +1590,7 @@ class TableForFind(MyTable):
 
     def GetValue(self, row, col):
         if col in (self.COL_ACTIVE, self.COL_RE):
-            return u'1' if self.data[row][col] else ''
+            return '1' if self.data[row][col] else ''
         else:
             return '' if self.data[row][col] is None else self.data[row][col]
 
@@ -1617,18 +1608,18 @@ class TableForFind(MyTable):
     def DataString(self):
         if len(self.data) == 0:
             return 'None'
-        s = u'['
+        s = '['
         for i in self.data:
-            s += u'[{}, {}, '.format(i[self.COL_ACTIVE], i[self.COL_RE])
+            s += '[{}, {}, '.format(i[self.COL_ACTIVE], i[self.COL_RE])
             if i[self.COL_FIND] is not None:
                 s += u"'" + i[self.COL_FIND].replace('\\', r'\\').replace('\n', r'\n').replace("'", r'\'') + u"', "
             else:
-                s += u'None, '
+                s += 'None, '
             if i[self.COL_REPLACE] is not None:
                 s += u"'" + i[self.COL_REPLACE].replace('\\', r'\\').replace('\n', r'\n').replace("'", r"\'") + u"'], "
             else:
-                s += u'None], '
-        return s[:-2] + u']'
+                s += 'None], '
+        return s[:-2] + ']'
 
 class GridWithCellToolTip(wx.grid.Grid):
     def __init__(self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.DefaultSize,
@@ -1770,12 +1761,12 @@ class DialogFind(wx.Dialog):
         self.button_invert_re.SetToolTip(_(u'選択している行の正規表現チェックを逆転させます'))
         bSizer2.Add(self.button_invert_re, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        self.button_insert_find = wx.Button(self, wx.ID_ANY, u'+',
+        self.button_insert_find = wx.Button(self, wx.ID_ANY, '+',
             wx.DefaultPosition, wx.Size(45, -1), 0, name = 'igrid_find')
         self.button_insert_find.SetToolTip(_(u'上に行を追加'))
         bSizer2.Add(self.button_insert_find, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        self.button_delete_find = wx.Button(self, wx.ID_ANY, u'-',
+        self.button_delete_find = wx.Button(self, wx.ID_ANY, '-',
             wx.DefaultPosition, wx.Size(45, -1), 0, name = 'dgrid_find')
         self.button_delete_find.SetToolTip(_(u'選択している行を削除'))
         bSizer2.Add(self.button_delete_find, 0, wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.BOTTOM | wx.RIGHT, 5)
@@ -2199,7 +2190,7 @@ class DialogFind(wx.Dialog):
 class FrameMain(wx.Frame):
     def __init__(self, parent):
         wx.Frame.__init__(self, parent, id = wx.ID_ANY,
-            title = u'texteditwx (' + version + u') by Python ' + platform.python_version(),
+            title = 'texteditwx (' + version + ') by Python ' + platform.python_version(),
             pos = wx.DefaultPosition, size = wx.Size(800, 700), style = wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
         self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
         self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
@@ -2222,7 +2213,7 @@ class FrameMain(wx.Frame):
         bSizer2.Add(staticText1, 0, wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.BOTTOM | wx.LEFT, 5)
 
         self.filePicker = wx.FilePickerCtrl(self, wx.ID_ANY, wx.EmptyString,
-            _(u'ファイルを開く'), u'*.*', wx.DefaultPosition, wx.DefaultSize,
+            _(u'ファイルを開く'), '*.*', wx.DefaultPosition, wx.DefaultSize,
             wx.FLP_USE_TEXTCTRL | wx.FLP_OPEN | wx.FLP_FILE_MUST_EXIST)
         self.filePicker.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
         self.filePicker.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
@@ -2244,30 +2235,30 @@ class FrameMain(wx.Frame):
 
         bSizer2 = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.button_plus = wx.Button(self, wx.ID_ANY, u'+', wx.DefaultPosition, wx.Size(45, -1), 0)
+        self.button_plus = wx.Button(self, wx.ID_ANY, '+', wx.DefaultPosition, wx.Size(45, -1), 0)
         self.button_plus.SetToolTip(_(u'選択部分に足し算を作用させます'))
         bSizer2.Add(self.button_plus, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        self.button_minus = wx.Button(self, wx.ID_ANY, u'-', wx.DefaultPosition, wx.Size(45, -1), 0)
+        self.button_minus = wx.Button(self, wx.ID_ANY, '-', wx.DefaultPosition, wx.Size(45, -1), 0)
         self.button_minus.SetToolTip(_(u'選択部分に引き算を作用させます'))
         bSizer2.Add(self.button_minus, 0, wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.BOTTOM | wx.RIGHT, 5)
 
-        self.button_multiply = wx.Button(self, wx.ID_ANY, u'*', wx.DefaultPosition, wx.Size(45, -1), 0)
+        self.button_multiply = wx.Button(self, wx.ID_ANY, '*', wx.DefaultPosition, wx.Size(45, -1), 0)
         self.button_multiply.SetToolTip(_(u'選択部分にかけ算を作用させます'))
         bSizer2.Add(self.button_multiply, 0, wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.BOTTOM | wx.RIGHT, 5)
 
-        self.button_divide = wx.Button(self, wx.ID_ANY, u'/', wx.DefaultPosition, wx.Size(45, -1), 0)
+        self.button_divide = wx.Button(self, wx.ID_ANY, '/', wx.DefaultPosition, wx.Size(45, -1), 0)
         self.button_divide.SetToolTip(_(u'選択部分に割り算を作用させます'))
         bSizer2.Add(self.button_divide, 0, wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.BOTTOM | wx.RIGHT, 5)
 
-        self.button_power = wx.Button(self, wx.ID_ANY, u'^', wx.DefaultPosition, wx.Size(45, -1), 0)
+        self.button_power = wx.Button(self, wx.ID_ANY, '^', wx.DefaultPosition, wx.Size(45, -1), 0)
         self.button_power.SetToolTip(_(u'選択部分に累乗を作用させます'))
         bSizer2.Add(self.button_power, 0, wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.BOTTOM | wx.RIGHT, 5)
 
         staticText1 = wx.StaticText(self, wx.ID_ANY, _(u'作用させる要素：'), wx.DefaultPosition, wx.DefaultSize, 0)
         staticText1.Wrap(-1)
         bSizer2.Add(staticText1, 0, wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.BOTTOM, 5)
-        self.textCtrl_affect = wx.TextCtrl(self, wx.ID_ANY, u'2', wx.DefaultPosition, wx.Size(60, -1), 0)
+        self.textCtrl_affect = wx.TextCtrl(self, wx.ID_ANY, '2', wx.DefaultPosition, wx.Size(60, -1), 0)
         if font is not None:
             self.textCtrl_affect.SetFont(font)
             self.textCtrl_affect.SetDefaultStyle(wx.TextAttr(wx.NullColour, font = font))
@@ -2294,7 +2285,7 @@ class FrameMain(wx.Frame):
         staticText1 = wx.StaticText(self, wx.ID_ANY, _(u'追加する文字：'), wx.DefaultPosition, wx.DefaultSize, 0)
         staticText1.Wrap(-1)
         bSizer2.Add(staticText1, 0, wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.BOTTOM, 5)
-        self.textCtrl_shift = wx.TextCtrl(self, wx.ID_ANY, u'# ', wx.DefaultPosition, wx.Size(60, -1), 0)
+        self.textCtrl_shift = wx.TextCtrl(self, wx.ID_ANY, '# ', wx.DefaultPosition, wx.Size(60, -1), 0)
         if font is not None:
             self.textCtrl_shift.SetFont(font)
             self.textCtrl_shift.SetDefaultStyle(wx.TextAttr(wx.NullColour, font = font))
@@ -2551,149 +2542,149 @@ class FrameMain(wx.Frame):
         self.menu_OF.AppendSeparator()
         self.menu_OF_bc = wx.Menu()
         self.menu_OF_bc_C = wx.Menu()
-        self.menuItem_OF_calculated = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'calculated',
+        self.menuItem_OF_calculated = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'calculated',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_C.Append(self.menuItem_OF_calculated)
         self.menuItem_OF_compressible_alphatWallFunction = wx.MenuItem(self.menu_OF, wx.ID_ANY,
-            u'compressible::alphatWallFunction', wx.EmptyString, wx.ITEM_NORMAL)
+            'compressible::alphatWallFunction', wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_C.Append(self.menuItem_OF_compressible_alphatWallFunction)
         self.menuItem_OF_compressible_turbulentTemperatureCoupledBaffleMixed = wx.MenuItem(self.menu_OF, wx.ID_ANY,
-            u'compressible::turbulentTemperatureCoupledBaffleMixed', wx.EmptyString, wx.ITEM_NORMAL)
+            'compressible::turbulentTemperatureCoupledBaffleMixed', wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_C.Append(self.menuItem_OF_compressible_turbulentTemperatureCoupledBaffleMixed)
         self.menuItem_OF_compressible_turbulentTemperatureRadCoupledMixed = wx.MenuItem(self.menu_OF, wx.ID_ANY,
-            u'compressible::turbulentTemperatureRadCoupledMixed', wx.EmptyString, wx.ITEM_NORMAL)
+            'compressible::turbulentTemperatureRadCoupledMixed', wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_C.Append(self.menuItem_OF_compressible_turbulentTemperatureRadCoupledMixed)
-        self.menuItem_OF_cyclic = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'cyclic',
+        self.menuItem_OF_cyclic = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'cyclic',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_C.Append(self.menuItem_OF_cyclic)
         self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_C, _(u'Cで始まるもの'))
         self.menu_OF_bc_E = wx.Menu()
-        self.menuItem_OF_empty = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'empty',
+        self.menuItem_OF_empty = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'empty',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_E.Append(self.menuItem_OF_empty)
-        self.menuItem_OF_epsilonWallFunction = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'epsilonWallFunction',
+        self.menuItem_OF_epsilonWallFunction = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'epsilonWallFunction',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_E.Append(self.menuItem_OF_epsilonWallFunction)
         self.menuItem_OF_externalWallHeatFluxTemperature = wx.MenuItem(self.menu_OF, wx.ID_ANY,
-            u'externalWallHeatFluxTemperature', wx.EmptyString, wx.ITEM_NORMAL)
+            'externalWallHeatFluxTemperature', wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_E.Append(self.menuItem_OF_externalWallHeatFluxTemperature)
         self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_E, _(u'Eで始まるもの'))
         self.menu_OF_bc_F = wx.Menu()
-        self.menuItem_OF_fixedFluxPressure = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'fixedFluxPressure',
+        self.menuItem_OF_fixedFluxPressure = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'fixedFluxPressure',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_F.Append(self.menuItem_OF_fixedFluxPressure)
-        self.menuItem_OF_fixedGradient = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'fixedGradient',
+        self.menuItem_OF_fixedGradient = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'fixedGradient',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_F.Append(self.menuItem_OF_fixedGradient)
-        self.menuItem_OF_fixedValue = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'fixedValue',
+        self.menuItem_OF_fixedValue = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'fixedValue',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_F.Append(self.menuItem_OF_fixedValue)
-        self.menuItem_OF_flowRateInletVelocity = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'flowRateInletVelocity',
+        self.menuItem_OF_flowRateInletVelocity = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'flowRateInletVelocity',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_F.Append(self.menuItem_OF_flowRateInletVelocity)
-        self.menuItem_OF_freestreamPressure = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'freestreamPressure',
+        self.menuItem_OF_freestreamPressure = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'freestreamPressure',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_F.Append(self.menuItem_OF_freestreamPressure)
-        self.menuItem_OF_freestreamVelocity = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'freestreamVelocity',
+        self.menuItem_OF_freestreamVelocity = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'freestreamVelocity',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_F.Append(self.menuItem_OF_freestreamVelocity)
         self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_F, _(u'Fで始まるもの'))
         self.menu_OF_bc_G = wx.Menu()
         self.menuItem_OF_greyDiffusiveRadiationViewFactor = wx.MenuItem(self.menu_OF, wx.ID_ANY,
-            u'greyDiffusiveRadiationViewFactor', wx.EmptyString, wx.ITEM_NORMAL)
+            'greyDiffusiveRadiationViewFactor', wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_G.Append(self.menuItem_OF_greyDiffusiveRadiationViewFactor)
         self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_G, _(u'Gで始まるもの'))
         self.menu_OF_bc_I = wx.Menu()
-        self.menuItem_OF_inletOutlet = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'inletOutlet',
+        self.menuItem_OF_inletOutlet = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'inletOutlet',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_I.Append(self.menuItem_OF_inletOutlet)
         self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_I, _(u'Iで始まるもの'))
         self.menu_OF_bc_K = wx.Menu()
-        self.menuItem_OF_kqRWallFunction = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'kqRWallFunction',
+        self.menuItem_OF_kqRWallFunction = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'kqRWallFunction',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_K.Append(self.menuItem_OF_kqRWallFunction)
         self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_K, _(u'Kで始まるもの'))
         self.menu_OF_bc_M = wx.Menu()
-        self.menuItem_OF_movingWallVelocity = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'movingWallVelocity',
+        self.menuItem_OF_movingWallVelocity = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'movingWallVelocity',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_M.Append(self.menuItem_OF_movingWallVelocity)
         self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_M, _(u'Mで始まるもの'))
         self.menu_OF_bc_N = wx.Menu()
-        self.menuItem_OF_nutkRoughWallFunction = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'nutkRoughWallFunction',
+        self.menuItem_OF_nutkRoughWallFunction = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'nutkRoughWallFunction',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_N.Append(self.menuItem_OF_nutkRoughWallFunction)
-        self.menuItem_OF_nutkWallFunction = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'nutkWallFunction',
+        self.menuItem_OF_nutkWallFunction = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'nutkWallFunction',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_N.Append(self.menuItem_OF_nutkWallFunction)
-        self.menuItem_OF_nutUWallFunction = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'nutUWallFunction',
+        self.menuItem_OF_nutUWallFunction = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'nutUWallFunction',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_N.Append(self.menuItem_OF_nutUWallFunction)
-        self.menuItem_OF_noSlip = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'noSlip',
+        self.menuItem_OF_noSlip = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'noSlip',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_N.Append(self.menuItem_OF_noSlip)
         self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_N, _(u'Nで始まるもの'))
         self.menu_OF_bc_O = wx.Menu()
-        self.menuItem_OF_omegaWallFunction = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'omegaWallFunction',
+        self.menuItem_OF_omegaWallFunction = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'omegaWallFunction',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_O.Append(self.menuItem_OF_omegaWallFunction)
-        self.menuItem_OF_outletInlet = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'outletInlet',
+        self.menuItem_OF_outletInlet = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'outletInlet',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_O.Append(self.menuItem_OF_outletInlet)
-        self.menuItem_OF_outletPhaseMeanVelocity = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'outletPhaseMeanVelocity',
+        self.menuItem_OF_outletPhaseMeanVelocity = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'outletPhaseMeanVelocity',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_O.Append(self.menuItem_OF_outletPhaseMeanVelocity)
         self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_O, _(u'Oで始まるもの'))
         self.menu_OF_bc_P = wx.Menu()
-        self.menuItem_OF_pressureInletOutletVelocity = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'pressureInletOutletVelocity',
+        self.menuItem_OF_pressureInletOutletVelocity = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'pressureInletOutletVelocity',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_P.Append(self.menuItem_OF_pressureInletOutletVelocity)
-        self.menuItem_OF_prghPressure = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'prghPressure',
+        self.menuItem_OF_prghPressure = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'prghPressure',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_P.Append(self.menuItem_OF_prghPressure)
         self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_P, _(u'Pで始まるもの'))
         self.menu_OF_bc_R = wx.Menu()
-        self.menuItem_OF_rotatingWallVelocity = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'rotatingWallVelocity',
+        self.menuItem_OF_rotatingWallVelocity = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'rotatingWallVelocity',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_R.Append(self.menuItem_OF_rotatingWallVelocity)
         self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_R, _(u'Rで始まるもの'))
         self.menu_OF_bc_S = wx.Menu()
-        self.menuItem_OF_slip = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'slip',
+        self.menuItem_OF_slip = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'slip',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_S.Append(self.menuItem_OF_slip)
-        self.menuItem_OF_surfaceNormalFixedValue = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'surfaceNormalFixedValue',
+        self.menuItem_OF_surfaceNormalFixedValue = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'surfaceNormalFixedValue',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_S.Append(self.menuItem_OF_surfaceNormalFixedValue)
-        self.menuItem_OF_symmetry = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'symmetry',
+        self.menuItem_OF_symmetry = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'symmetry',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_S.Append(self.menuItem_OF_symmetry)
-        self.menuItem_OF_symmetryPlane = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'symmetryPlane',
+        self.menuItem_OF_symmetryPlane = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'symmetryPlane',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_S.Append(self.menuItem_OF_symmetryPlane)
         self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_S, _(u'Sで始まるもの'))
         self.menu_OF_bc_T = wx.Menu()
-        self.menuItem_OF_totalPressure = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'totalPressure',
+        self.menuItem_OF_totalPressure = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'totalPressure',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_T.Append(self.menuItem_OF_totalPressure)
         self.menuItem_OF_turbulentIntensityKineticEnergyInlet = wx.MenuItem(self.menu_OF, wx.ID_ANY,
-            u'turbulentIntensityKineticEnergyInlet', wx.EmptyString, wx.ITEM_NORMAL)
+            'turbulentIntensityKineticEnergyInlet', wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_T.Append(self.menuItem_OF_turbulentIntensityKineticEnergyInlet)
         self.menuItem_OF_turbulentMixingLengthDissipationRateInlet = wx.MenuItem(self.menu_OF, wx.ID_ANY,
-            u'turbulentMixingLengthDissipationRateInlet', wx.EmptyString, wx.ITEM_NORMAL)
+            'turbulentMixingLengthDissipationRateInlet', wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_T.Append(self.menuItem_OF_turbulentMixingLengthDissipationRateInlet)
         self.menuItem_OF_turbulentMixingLengthFrequencyInlet = wx.MenuItem(self.menu_OF, wx.ID_ANY,
-            u'turbulentMixingLengthFrequencyInlet', wx.EmptyString, wx.ITEM_NORMAL)
+            'turbulentMixingLengthFrequencyInlet', wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_T.Append(self.menuItem_OF_turbulentMixingLengthFrequencyInlet)
         self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_T, _(u'Tで始まるもの'))
         self.menu_OF_bc_V = wx.Menu()
-        self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_V, _(u'Vで始まるもの'))
-        self.menu_OF_bc_Z = wx.Menu()
-        self.menuItem_OF_variableHeightFlowRate = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'variableHeightFlowRate',
+        self.menuItem_OF_variableHeightFlowRate = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'variableHeightFlowRate',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_V.Append(self.menuItem_OF_variableHeightFlowRate)
-        self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_Z, _(u'Zで始まるもの'))
-        self.menuItem_OF_zeroGradient = wx.MenuItem(self.menu_OF, wx.ID_ANY, u'zeroGradient',
+        self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_V, _(u'Vで始まるもの'))
+        self.menu_OF_bc_Z = wx.Menu()
+        self.menuItem_OF_zeroGradient = wx.MenuItem(self.menu_OF, wx.ID_ANY, 'zeroGradient',
             wx.EmptyString, wx.ITEM_NORMAL)
         self.menu_OF_bc_Z.Append(self.menuItem_OF_zeroGradient)
+        self.menu_OF_bc.AppendSubMenu(self.menu_OF_bc_Z, _(u'Zで始まるもの'))
         self.menu_OF.AppendSubMenu(self.menu_OF_bc, _(u'境界条件の雛形'))
         self.menubar.Append(self.menu_OF, 'OpenFOAM(&O)')
 
@@ -2824,7 +2815,7 @@ class FrameMain(wx.Frame):
         self.Bind(wx.EVT_MENU, self.menuItem_movieOnMenuSelection, id = self.menuItem_movie.GetId())
 
         self.backup_path = correct_file_name_in_unicode(os.path.join(os.path.dirname(
-            os.path.realpath(decode_if_necessary(__file__))), u'backup_texteditwx.txt')) # unicode
+            os.path.realpath(decode_if_necessary(__file__))), 'backup_texteditwx.txt')) # unicode
         if os.path.isfile(self.backup_path):
             with codecs.open(self.backup_path, 'r', encoding = 'UTF-8') as f:
                 backup = ast.literal_eval('{' + f.read() + '\n}') # '\n}'の'\n'は最終行がコメントの時に必要
@@ -2915,9 +2906,9 @@ class FrameMain(wx.Frame):
             v = self.textCtrl_edit.GetValue()
             return_code = self.return_codes[self.choice_return_code.GetSelection()]
             if return_code == 'CR+LF':
-                v = v.replace(u'\n', u'\r\n')
+                v = v.replace('\n', '\r\n')
             elif return_code == 'CR':
-                v = v.replace(u'\n', u'\r')
+                v = v.replace('\n', '\r')
             f.write(v)
         # self.textCtrl_edit.SaveFile(path) used in windows includes CR in return codes
         self.filePicker.SetPath(path)
@@ -2930,10 +2921,10 @@ class FrameMain(wx.Frame):
             self.save_commands(self.filePicker.GetPath())
 
     def menuItem_save_asOnMenuSelection(self, event):
-        with wx.FileDialog(self, _(u'ファイルを保存'), wildcard = u'All files (*)|*',
+        with wx.FileDialog(self, _(u'ファイルを保存'), wildcard = 'All files (*)|*',
             style = wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fd:
             fd.SetDirectory(self.cwd)
-            fd.SetFilename(u'Untitled.txt')
+            fd.SetFilename('Untitled.txt')
             if fd.ShowModal() == wx.ID_CANCEL:
                 return
             self.save_commands(fd.GetPath())
@@ -3041,7 +3032,7 @@ class FrameMain(wx.Frame):
         self.textCtrl_edit.line_numbered(head = True, prefix = '', suffix = ': ')
 
     def menuItem_bracketOnMenuSelection(self, event):
-        self.textCtrl_edit.select_bracket(((u'(', u')'), (u'{', u'}'), (u'[', u']')))
+        self.textCtrl_edit.select_bracket((('(', ')'), ('{', '}'), ('[', ']')))
 
     def menuItem_completionOnMenuSelection(self, event):
         if self.textCtrl_edit.HasFocus():
@@ -3057,14 +3048,14 @@ class FrameMain(wx.Frame):
 
     def menuItem_datetimeOnMenuSelection(self, event):
         if sys.platform == 'win32':
-            self.textCtrl_edit.WriteText(datetime.datetime.now().strftime(u'%Y/%m/%d %I:%M:%S %p').
+            self.textCtrl_edit.WriteText(datetime.datetime.now().strftime('%Y/%m/%d %I:%M:%S %p').
                 replace('/0', '/').replace(' 0', ' '))
         else:
-            self.textCtrl_edit.WriteText(datetime.datetime.now().strftime(u'%Y/%-m/%-d %-I:%M:%S %p'))
+            self.textCtrl_edit.WriteText(datetime.datetime.now().strftime('%Y/%-m/%-d %-I:%M:%S %p'))
 
     def menuItem_colorize_textsOnMenuSelection(self, event):
-        self.textCtrl_edit.colorize_texts(parentheses = ((u'(', u')'), (u'{', u'}'), (u'[', u']')),
-            literals = ((u'"', u'"'), (u"'", u"'")), literal_escape = u'\\')
+        self.textCtrl_edit.colorize_texts(parentheses = (('(', ')'), ('{', '}'), ('[', ']')),
+            literals = (('"', '"'), (u"'", u"'")), literal_escape = '\\')
 
     def menuItem_reset_stylesOnMenuSelection(self, event):
         self.textCtrl_edit.reset_styles()
@@ -3072,8 +3063,8 @@ class FrameMain(wx.Frame):
     def menuItem_insert_returnOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(re.sub('^(\\-|\\+)\\n', '\\1',
             self.textCtrl_edit.re_sub_in_top_level('(,|\\+|\\-|=)\\s*', '\\1\n',
-                parentheses = ((u'(', u')'), (u'{', u'}'), (u'[', u']')),
-                literals = ((u'"', u'"'), (u"'", u"'")), literal_escape = u'\\')))
+                parentheses = (('(', ')'), ('{', '}'), ('[', ']')),
+                literals = (('"', '"'), (u"'", u"'")), literal_escape = '\\')))
 
     def menuItem_evaluateOnMenuSelection(self, event):
         self.textCtrl_edit.send_commands_to_maxima()
@@ -3108,31 +3099,31 @@ class FrameMain(wx.Frame):
         self.textCtrl_edit.WriteText("#!/usr/bin/env python\n# -*- coding: utf-8 -*-\n\nif __name__ == '__main__':")
 
     def menuItem_python_indentOnMenuSelection(self, event):
-        self.textCtrl_edit.indent(u'    ')
+        self.textCtrl_edit.indent('    ')
 
     def menuItem_python_unindentOnMenuSelection(self, event):
-        self.textCtrl_edit.unindent(u'    ')
+        self.textCtrl_edit.unindent('    ')
 
     def menuItem_python_commentOnMenuSelection(self, event):
-        self.textCtrl_edit.indent(u'#')
+        self.textCtrl_edit.indent('#')
 
     def menuItem_python_uncommentOnMenuSelection(self, event):
-        self.textCtrl_edit.unindent(u'#')
+        self.textCtrl_edit.unindent('#')
 
     def menuItem_leading_tab_to_spaceOnMenuSelection(self, event):
         self.textCtrl_edit.change_leading_tab_to_space()
 
     def menuItem_OF_indentOnMenuSelection(self, event):
-        self.textCtrl_edit.indent(u'\t')
+        self.textCtrl_edit.indent('\t')
 
     def menuItem_OF_unindentOnMenuSelection(self, event):
-        self.textCtrl_edit.unindent(u'\t')
+        self.textCtrl_edit.unindent('\t')
 
     def menuItem_OF_commentOnMenuSelection(self, event):
-        self.textCtrl_edit.indent(u'//')
+        self.textCtrl_edit.indent('//')
 
     def menuItem_OF_uncommentOnMenuSelection(self, event):
-        self.textCtrl_edit.unindent(u'//')
+        self.textCtrl_edit.unindent('//')
 
     def menuItem_leading_space_to_tabOnMenuSelection(self, event):
         self.textCtrl_edit.change_leading_space_to_tab()
@@ -3178,7 +3169,7 @@ class FrameMain(wx.Frame):
     def menuItem_OF_cyclicOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('cyclic',
             u'周期境界\nconstant/polyMesh/boundaryで\nneighbourPatchを指定しないといけない．\n' +
-            u'http://penguinitis.g1.xrea.com/study/OpenFOAM/cyclic/cyclic.html',
+            'http://penguinitis.g1.xrea.com/study/OpenFOAM/cyclic/cyclic.html',
             '',
             openfoam_src + 'finiteVolume/fields/fvPatchFields/constraint/cyclic'),
             indent = '\t'))
@@ -3353,7 +3344,7 @@ class FrameMain(wx.Frame):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('outletPhaseMeanVelocity',
             u'alphaで示す相の平均流出流速がUmeanになるように規定する．\n' +
             u'典型的な例としては，曳航水槽による船周りの流れシミュレーションで，\n入口と出口の水位が同じになるようにする場合に使う．',
-            u'alpha alpha.water;\nUmean 1.2;',
+            'alpha alpha.water;\nUmean 1.2;',
             openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/outletPhaseMeanVelocity'),
             indent = '\t'))
 
@@ -3413,7 +3404,7 @@ class FrameMain(wx.Frame):
     def menuItem_OF_totalPressureOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('totalPressure',
             u'pまたはp_rghに使用\np0で決めた値が全圧（p_rghの場合は全圧 + rho*g*z）になるように設定',
-            u'p0 uniform 0;',
+            'p0 uniform 0;',
             openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/totalPressure'),
             indent = '\t'))
 
@@ -3444,9 +3435,9 @@ class FrameMain(wx.Frame):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('variableHeightFlowRate',
             u'alphaに使用\n' +
             u'alpha < lowerBoundの時→alpha = lowerBound，\n' +
-            u'lowerBound < alpha < upperBoundの時→zeroGradient，\n' +
+            'lowerBound < alpha < upperBoundの時→zeroGradient，\n' +
             u'upperBound < alpha の時→alpha = upperBound',
-            u'lowerBound 0.0;\nupperBound 1.0;',
+            'lowerBound 0.0;\nupperBound 1.0;',
             openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/variableHeightFlowRate'),
             indent = '\t'))
 
@@ -3473,31 +3464,31 @@ class FrameMain(wx.Frame):
             with open(p, 'wb') as f:
                 f.write(s[0])
             pd = os.path.dirname(p)
-#            d = os.path.join(pd, u'locale', u'en', u'LC_MESSAGES')
+#            d = os.path.join(pd, 'locale', 'en', 'LC_MESSAGES')
 #            if not os.path.isdir(d):
 #                os.makedirs(d)
 #            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
 #                branch = 'main', file_path = 'locale/en/LC_MESSAGES/messages.mo')
 #            if s is not None:
-#                with open(os.path.join(d, u'messages.mo'), 'wb') as f:
+#                with open(os.path.join(d, 'messages.mo'), 'wb') as f:
 #                    f.write(s[0])
 #            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
 #                branch = 'main', file_path = 'locale/en/LC_MESSAGES/messages.po')
 #            if s is not None:
-#                with open(os.path.join(d, u'messages.po'), 'wb') as f:
+#                with open(os.path.join(d, 'messages.po'), 'wb') as f:
 #                    f.write(s[0])
 #            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
 #                branch = 'main', file_path = 'locale/messages.pot')
 #            if s is not None:
-#                with open(os.path.join(pd, u'locale', u'messages.pot'), 'wb') as f:
+#                with open(os.path.join(pd, 'locale', 'messages.pot'), 'wb') as f:
 #                    f.write(s[0])
 #            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
 #                branch = 'main', file_path = 'README.md')
 #            if s is not None:
-#                with open(os.path.join(pd, u'README.md'), 'wb') as f:
+#                with open(os.path.join(pd, 'README.md'), 'wb') as f:
 #                    f.write(s[0])
-            if os.path.isfile(os.path.join(pd, u'modules_needed.txt')):
-                os.remove(os.path.join(pd, u'modules_needed.txt'))
+            if os.path.isfile(os.path.join(pd, 'modules_needed.txt')):
+                os.remove(os.path.join(pd, 'modules_needed.txt'))
             with wx.MessageDialog(self, _(u'アップデートされました．再起動します．'),
                 _(u'アップデート完了'), style = wx.ICON_INFORMATION) as md:
                 md.ShowModal()
@@ -3514,7 +3505,7 @@ if __name__ == '__main__':
     # if __name__ == '__main__'下はグローバルスコープです。
     # そこで定義された変数は、すべてグローバル変数になるということです。
     if len(sys.argv) > 1 and sys.argv[1] == '-h':
-        print(u'Usage: {} <file_name>'.format(os.path.basename(decode_if_necessary(sys.argv[0]))))
+        print('Usage: {} <file_name>'.format(os.path.basename(decode_if_necessary(sys.argv[0]))))
         sys.exit()
     app = wx.App()
     frame_main = FrameMain(None)
