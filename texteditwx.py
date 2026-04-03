@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/4/2 10:09:25 PM
+# 2026/4/3 9:55:15 AM
 
-version = '2026/4/2 10:09:25 PM'
+version = '2026/4/3 9:55:15 AM'
 
 import sys
 
@@ -189,9 +189,10 @@ def str_range_between(string, selection, parentheses):
         l1 += 1
     return None
 
-def str_levels(string, parentheses = None, literals = None, literal_escape = ''):
+def str_levels(string, parentheses = None, literals = None, literal_escape = '', line_comments = None):
     # example of parentheses: (('(', ')'), ('{', '}'), ('[', ']'))
-    # example of iterals: (('"', '"'), (u"'", u"'"))
+    # example of literals: (('"', '"'), ("'", "'"))
+    # example of line_comments: ('#',  "//")
     # example of literal_escape: '\\'
     if parentheses is None:
         parentheses = tuple()
@@ -201,57 +202,71 @@ def str_levels(string, parentheses = None, literals = None, literal_escape = '')
         literals = tuple()
     elif not isinstance(literals[0], (tuple, list)):
         literals = (literals,)
-    w = max([max(len(i[0]), len(i[1])) for i in parentheses])
-    if len(literals) > 0:
-        w = max(w, max([max(len(i[0]), len(i[1])) for i in literals]), len(literal_escape))
+    if line_comments is None:
+        line_comments = tuple()
+    elif not isinstance(line_comments, (tuple, list)):
+        line_comments = (line_comments,)
+    w = max(max([max(len(i[0]), len(i[1])) for i in parentheses + literals]),
+        max([len(i) for i in line_comments]), len(literal_escape))
 
-    def str_levels_local(parentheses, literals, index, level):
+    def str_levels_local(parentheses, literals, line_comments, index, level):
         start = index
         levels = []
         while index < len(string):
             s = string[index:index + w] # はみ出した範囲のぶんは空文字になる
             old_index = index
+            for i in line_comments:
+                if s.startswith(i[0]):
+                    levels.append([start, index, level])
+                    while index < len(string):
+                        index += 1
+                        s = string[index:index + w] # はみ出した範囲のぶんは空文字になる
+                        if s.startswith('\n') or s.startswith('\r'):
+                            index += 1
+                            break
+                    levels.append([old_index, index, level + 1])
+                    start = index # levelsに追加したのでstartを更新
             for i in literals:
                 if i[0] is not None and s.startswith(i[0]):
                     levels.append([start, index, level])
                     index += len(i[0])
                     if index == len(string):
-                        l = [[old_index, index, level + 1]]
+                        levels.append([old_index, index, level + 1])
                     else:
-                        l, index = str_levels_local((), ((None, i[1]),), index, level + 1)
+                        l, index = str_levels_local((), ((None, i[1]),), (), index, level + 1)
                         l[0][0] = old_index # 先頭のstartを修正
-                    levels.extend(l)
-                    start = index
+                        levels.extend(l)
+                    start = index # levelsに追加したのでstartを更新
                 elif s.startswith(literal_escape):
                     index += len(literal_escape) + 1
                 elif s.startswith(i[1]):
                     index += len(i[1])
-                    levels.append([start, index, level])
                     if level > 0: # レベル0なら始まりが見つからずに，いきなり終わりが見つかったことになる
+                        levels.append([start, index, level])
                         return levels, index
             for i in parentheses:
                 if i[0] is not None and s.startswith(i[0]):
                     levels.append([start, index, level])
                     index += len(i[0])
                     if index == len(string):
-                        l = [[old_index, index, level + 1]]
+                        levels.append([old_index, index, level + 1])
                     else:
-                        l, index = str_levels_local(parentheses, literals, index, level + 1)
+                        l, index = str_levels_local(parentheses, literals, line_comments, index, level + 1)
                         l[0][0] = old_index # 先頭のstartを修正
-                    levels.extend(l)
-                    start = index
+                        levels.extend(l)
+                    start = index # levelsに追加したのでstartを更新
                 elif s.startswith(i[1]):
                     index += len(i[1])
-                    levels.append([start, index, level])
                     if level > 0: # レベル0なら始まりが見つからずに，いきなり終わりが見つかったことになる
+                        levels.append([start, index, level])
                         return levels, index
             if old_index == index:
                 index += 1
-        if start != min(index, len(string)):
+        if start != index:
             levels.append([start, index, level])
         return levels, index
 
-    return str_levels_local(parentheses, literals, 0, 0)[0]
+    return str_levels_local(parentheses, literals, line_comments, index = 0, level = 0)[0]
 
 def line_numbered_str(string, head = True, prefix = '', suffix = ': '):
     s_has_lf_in_last_line = string.endswith('\n')
@@ -433,7 +448,8 @@ class Maxima(object):
                 if debug:
                     print('    s = "{}"'.format(s))
                 if c.endswith('$') and (s == '' or s.startswith('(%i') or s.endswith('$')):
-                    if ('incorrect syntax: ' in s or s.endswith(' -- an error. To debug this try: debugmode(true);') or
+                    if ('incorrect syntax: ' in s or
+                        s.endswith(' -- an error. To debug this try: debugmode(true);') or
                         'Maxima encountered a Lisp error: ' in s):
                         l_output = len(s)
                         s = '/* ERROR: */\n' + s
@@ -482,7 +498,8 @@ class Maxima(object):
                         s = s[:i]
                     l_output = len(s)
                     s = '/* WARNING */\n' + s
-                elif ('incorrect syntax: ' in s or s.endswith(' -- an error. To debug this try: debugmode(true);') or
+                elif ('incorrect syntax: ' in s or
+                    s.endswith(' -- an error. To debug this try: debugmode(true);') or
                     'Maxima encountered a Lisp error: ' in s):
                     l_output = len(s)
                     s = '/* ERROR: */\n' + s
@@ -1331,8 +1348,8 @@ class MyTextCtrl(wx.TextCtrl):
         else:
             self.SetSelection(*r)
 
-    def colorize_texts(self, parentheses = None, literals = None, literal_escape = ''):
-        for i in str_levels(self.GetValue(), parentheses, literals, literal_escape):
+    def colorize_texts(self, parentheses = None, literals = None, literal_escape = '', line_comments = None):
+        for i in str_levels(self.GetValue(), parentheses, literals, literal_escape, line_comments):
             j = i[2]%len(self.colors)
             self.SetStyle(i[0], i[1],
                 wx.TextAttr(wx.Colour(self.colors[j][0], self.colors[j][1], self.colors[j][2], 255)))
@@ -1344,11 +1361,12 @@ class MyTextCtrl(wx.TextCtrl):
         if self.font is not None:
             self.SetDefaultStyle(wx.TextAttr(wx.NullColour, font = self.font))
 
-    def re_sub_in_top_level(self, pattern, repl, parentheses = None, literals = None, literal_escape = ''):
+    def re_sub_in_top_level(self, pattern, repl, parentheses = None, literals = None, literal_escape = '',
+        line_comments = None):
         if self.debug:
             print('----- ' + sys._getframe().f_code.co_name + ' -----')
         s = self.GetStringSelection()
-        levels = str_levels(s, parentheses, literals, literal_escape)
+        levels = str_levels(s, parentheses, literals, literal_escape, line_comments)
         if len(levels) == 0:
             return
         top = min([i[2] for i in levels])
@@ -1612,11 +1630,11 @@ class TableForFind(MyTable):
         for i in self.data:
             s += '[{}, {}, '.format(i[self.COL_ACTIVE], i[self.COL_RE])
             if i[self.COL_FIND] is not None:
-                s += u"'" + i[self.COL_FIND].replace('\\', r'\\').replace('\n', r'\n').replace("'", r'\'') + u"', "
+                s += "'" + i[self.COL_FIND].replace('\\', r'\\').replace('\n', r'\n').replace("'", r'\'') + "', "
             else:
                 s += 'None, '
             if i[self.COL_REPLACE] is not None:
-                s += u"'" + i[self.COL_REPLACE].replace('\\', r'\\').replace('\n', r'\n').replace("'", r"\'") + u"'], "
+                s += "'" + i[self.COL_REPLACE].replace('\\', r'\\').replace('\n', r'\n').replace("'", r"\'") + "'], "
             else:
                 s += 'None], '
         return s[:-2] + ']'
@@ -2846,7 +2864,7 @@ class FrameMain(wx.Frame):
         backup['find_data'] = self.dialog_find.grid_find.table.DataString()
         with codecs.open(self.backup_path, 'w', encoding = 'UTF-8') as f:
             for k, v in backup.items():
-                f.write(u"'{}': {},\n".format(k, v))
+                f.write("'{}': {},\n".format(k, v))
 
     def FrameMainOnClose(self, event):
         self.save_backup()
@@ -3055,7 +3073,7 @@ class FrameMain(wx.Frame):
 
     def menuItem_colorize_textsOnMenuSelection(self, event):
         self.textCtrl_edit.colorize_texts(parentheses = (('(', ')'), ('{', '}'), ('[', ']')),
-            literals = (('"', '"'), (u"'", u"'")), literal_escape = '\\')
+            literals = (('"', '"'), ("'", "'")), literal_escape = '\\', line_comments = ('#', '//'))
 
     def menuItem_reset_stylesOnMenuSelection(self, event):
         self.textCtrl_edit.reset_styles()
@@ -3064,7 +3082,8 @@ class FrameMain(wx.Frame):
         self.textCtrl_edit.WriteText(re.sub('^(\\-|\\+)\\n', '\\1',
             self.textCtrl_edit.re_sub_in_top_level('(,|\\+|\\-|=)\\s*', '\\1\n',
                 parentheses = (('(', ')'), ('{', '}'), ('[', ']')),
-                literals = (('"', '"'), (u"'", u"'")), literal_escape = '\\')))
+                literals = (('"', '"'), ("'", "'")), literal_escape = '\\',
+                line_comments = ('#', '//'))))
 
     def menuItem_evaluateOnMenuSelection(self, event):
         self.textCtrl_edit.send_commands_to_maxima()
