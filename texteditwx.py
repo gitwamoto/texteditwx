@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/4/3 9:55:15 AM
+# 2026/4/9 6:46:08 PM
 
-version = '2026/4/3 9:55:15 AM'
+version = '2026/4/9 6:46:08 PM'
 
 import sys
 
@@ -1950,13 +1950,9 @@ class DialogFind(wx.Dialog):
                 if m:
                     found.append([m.start(), m.end(), i, n])
                     n += 1
-            elif self.checkBox_ignore_case.GetValue():
-                m = re.search(i[self.grid_find.table.COL_FIND], v, flags = re.IGNORECASE)
-                if m:
-                    found.append([m.start(), m.end(), i, n])
-                    n += 1
             else:
-                m = v.find(i[self.grid_find.table.COL_FIND])
+                m = (v.lower().find(i[self.grid_find.table.COL_FIND].lower())
+                    if self.checkBox_ignore_case.GetValue() else v.find(i[self.grid_find.table.COL_FIND]))
                 if m != -1:
                     found.append([m, m + len(i[self.grid_find.table.COL_FIND]), i, n])
                     n += 1
@@ -1985,12 +1981,9 @@ class DialogFind(wx.Dialog):
                     m = re.search(i[self.grid_find.table.COL_FIND], v)
                     if m:
                         found.append([m.start(), m.end(), i, n])
-                elif self.checkBox_ignore_case.GetValue():
-                    m = re.search(i[self.grid_find.table.COL_FIND], v, flags = re.IGNORECASE)
-                    if m:
-                        found.append([m.start(), m.end(), i, n])
                 else:
-                    m = v.find(i[self.grid_find.table.COL_FIND])
+                    m = (v.lower().find(i[self.grid_find.table.COL_FIND].lower())
+                        if self.checkBox_ignore_case.GetValue() else v.find(i[self.grid_find.table.COL_FIND]))
                     if m != -1:
                         found.append([m, m + len(i[self.grid_find.table.COL_FIND]), i, n])
 
@@ -2032,13 +2025,9 @@ class DialogFind(wx.Dialog):
                 if m:
                     found.append([m.start(), m.end(), i, n])
                     n += 1
-            elif self.checkBox_ignore_case.GetValue():
-                m = re.search(i[self.grid_find.table.COL_FIND], v0, flags = re.IGNORECASE)
-                if m:
-                    found.append([m.start(), m.end(), i, n])
-                    n += 1
             else:
-                m = v0.find(i[self.grid_find.table.COL_FIND])
+                m = (v0.lower().find(i[self.grid_find.table.COL_FIND].lower())
+                    if self.checkBox_ignore_case.GetValue() else v0.find(i[self.grid_find.table.COL_FIND]))
                 if m != -1:
                     found.append([m, m + len(i[self.grid_find.table.COL_FIND]), i, n])
                     n += 1
@@ -2050,10 +2039,6 @@ class DialogFind(wx.Dialog):
                 v1 += v0[:start] + re.sub(i[self.grid_find.table.COL_FIND],
                     '' if i[self.grid_find.table.COL_REPLACE] is None else i[self.grid_find.table.COL_REPLACE],
                     v0[start:end])
-            elif self.checkBox_ignore_case.GetValue():
-                v1 += v0[:start] + re.sub(i[self.grid_find.table.COL_FIND],
-                    '' if i[self.grid_find.table.COL_REPLACE] is None else i[self.grid_find.table.COL_REPLACE],
-                    v0[start:end], flags = re.IGNORECASE)
             else:
                 if i[self.grid_find.table.COL_REPLACE] is None:
                     v1 += v0[:start]
@@ -2076,12 +2061,9 @@ class DialogFind(wx.Dialog):
                     m = re.search(i[self.grid_find.table.COL_FIND], v0)
                     if m:
                         found.append([m.start(), m.end(), i, n])
-                elif self.checkBox_ignore_case.GetValue():
-                    m = re.search(i[self.grid_find.table.COL_FIND], v0, flags = re.IGNORECASE)
-                    if m:
-                        found.append([m.start(), m.end(), i, n])
                 else:
-                    m = v0.find(i[self.grid_find.table.COL_FIND])
+                    m = (v0.lower().find(i[self.grid_find.table.COL_FIND].lower())
+                        if self.checkBox_ignore_case.GetValue() else v0.find(i[self.grid_find.table.COL_FIND]))
                     if m != -1:
                         found.append([m, m + len(i[self.grid_find.table.COL_FIND]), i, n])
         v1 += v0
@@ -2099,20 +2081,14 @@ class DialogFind(wx.Dialog):
             if not i[self.grid_find.table.COL_ACTIVE] or i[self.grid_find.table.COL_FIND] is None:
                 continue
             if i[self.grid_find.table.COL_RE]:
-                m = re.search(i[self.grid_find.table.COL_FIND], v[start:end])
-                if m and (self.found is None or m.start() > self.found[0]):
-                    self.found = [m.start(), m.end(), i]
-            elif self.checkBox_ignore_case.GetValue():
-                m = re.search(i[self.grid_find.table.COL_FIND], v[start:end], flags = re.IGNORECASE)
+                m = re.compile(i[self.grid_find.table.COL_FIND]).search(v, start, end)
                 if m and (self.found is None or m.start() > self.found[0]):
                     self.found = [m.start(), m.end(), i]
             else:
-                m = v[start:end].find(i[self.grid_find.table.COL_FIND])
+                m = (v.lower().find(i[self.grid_find.table.COL_FIND].lower(), start, end)
+                    if self.checkBox_ignore_case.GetValue() else v.find(i[self.grid_find.table.COL_FIND], start, end))
                 if m != -1 and (self.found is None or m > self.found[0]):
                     self.found = [m, m + len(i[self.grid_find.table.COL_FIND]), i]
-        if self.found is not None:
-            self.found[0] += start
-            self.found[1] += start
 
     def button_find_prevOnButtonClick(self, event):
         end = self.target.GetInsertionPoint()
@@ -2139,20 +2115,14 @@ class DialogFind(wx.Dialog):
             if not i[self.grid_find.table.COL_ACTIVE] or i[self.grid_find.table.COL_FIND] is None:
                 continue
             if i[self.grid_find.table.COL_RE]:
-                m = re.search(i[self.grid_find.table.COL_FIND], v[point:])
-                if m and (self.found is None or m.start() < self.found[0]):
-                    self.found = [m.start(), m.end(), i]
-            elif self.checkBox_ignore_case.GetValue():
-                m = re.search(i[self.grid_find.table.COL_FIND], v[point:], flags = re.IGNORECASE)
+                m = re.compile(i[self.grid_find.table.COL_FIND]).search(v, point)
                 if m and (self.found is None or m.start() < self.found[0]):
                     self.found = [m.start(), m.end(), i]
             else:
-                m = v[point:].find(i[self.grid_find.table.COL_FIND])
+                m = (v.lower().find(i[self.grid_find.table.COL_FIND].lower(), point)
+                    if self.checkBox_ignore_case.GetValue() else v.find(i[self.grid_find.table.COL_FIND], point))
                 if m != -1 and (self.found is None or m < self.found[0]):
                     self.found = [m, m + len(i[self.grid_find.table.COL_FIND]), i]
-        if self.found is not None:
-            self.found[0] += point
-            self.found[1] += point
 
     def button_find_nextOnButtonClick(self, event):
         self.find_next_from(self.target.GetSelection()[1])
@@ -2180,15 +2150,9 @@ class DialogFind(wx.Dialog):
                         self.found[2][self.grid_find.table.COL_REPLACE], s))
                 else:
                     self.target.Remove(*self.target.GetSelection())
-        elif self.checkBox_ignore_case.GetValue():
-            m = re.match(self.found[2][self.grid_find.table.COL_FIND], s, flags = re.IGNORECASE)
-            if m and m.end() == len(s):
-                if self.found[2][self.grid_find.table.COL_REPLACE] is not None:
-                    self.target.WriteText(re.sub(self.found[2][self.grid_find.table.COL_FIND],
-                        self.found[2][self.grid_find.table.COL_REPLACE], s))
-                else:
-                    self.target.Remove(*self.target.GetSelection())
-        elif s == self.found[2][self.grid_find.table.COL_FIND]:
+        elif (self.checkBox_ignore_case.GetValue() and
+            s.lower() == self.found[2][self.grid_find.table.COL_FIND].lower() or
+            s == self.found[2][self.grid_find.table.COL_FIND]):
             if self.found[2][self.grid_find.table.COL_REPLACE] is not None:
                 self.target.WriteText(self.found[2][self.grid_find.table.COL_REPLACE])
             else:
