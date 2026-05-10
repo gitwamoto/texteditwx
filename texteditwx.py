@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/4/9 6:46:08 PM
+# 2026/5/10 3:21:21 PM
 
-version = '2026/4/9 6:46:08 PM'
+version = '2026/5/10 3:21:21 PM'
 
 import sys
 
@@ -216,7 +216,7 @@ def str_levels(string, parentheses = None, literals = None, literal_escape = '',
             s = string[index:index + w] # はみ出した範囲のぶんは空文字になる
             old_index = index
             for i in line_comments:
-                if s.startswith(i[0]):
+                if s.startswith(i):
                     levels.append([start, index, level])
                     while index < len(string):
                         index += 1
