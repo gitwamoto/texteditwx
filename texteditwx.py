@@ -4,7 +4,7 @@
 # by Yukiharu Iwamoto
 # 2026/5/28 2:56:48 PM
 
-version = '2026/5/10 3:21:21 PM'
+version = '2026/5/28 2:56:48 PM'
 
 import sys
 
