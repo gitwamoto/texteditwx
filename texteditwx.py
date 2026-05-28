@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/5/10 3:21:21 PM
+# 2026/5/28 2:56:48 PM
 
 version = '2026/5/10 3:21:21 PM'
 
@@ -150,42 +150,46 @@ def str_diff(str1, str2):
     return [i, str1[i:l1 + j], str2[i:l2 + j]] # j < 0
 
 def str_range_between(string, selection, parentheses):
-    # selection: (from, to) の形式のタプル
     # example of parentheses: (('(', ')'), ('{', '}'), ('[', ']'))
     if not isinstance(parentheses[0], (tuple, list)):
         parentheses = (parentheses,)
-    w = max([max(len(i[0]), len(i[1])) for i in parentheses])
+    w = max([max(len(i[0] or ''), len(i[1] or '')) for i in parentheses])
     l0 = selection[0] - 1
     pair = None
-    while l0 >= 0:
-        s = string[l0:l0 + w] # はみ出した範囲のぶんは空文字になる
-        for i in parentheses:
-            if i[1] is not None and s.startswith(i[1]):
-                l0 = str_range_between(string, (l0, l0), ((i[0], None),))
-                if l0 is None:
-                    return None
-                else:
-                    l0 = l0[0]
-            elif i[0] is not None and s.startswith(i[0]):
-                pair = i[1]
-                break
-        if pair is not None:
-            break
+    stack = []
+    while l0 >= 0: # 左に移動して，かっこの始まりを見つけて対応する終わりをpairに格納する．
+        s = string[l0:l0 + w] # はみ出した範囲のぶんは空文字になる．
+        p0 = next((i[0] for i in parentheses if s.startswith(i[1])), None)
+        if p0 is not None:
+            stack.append(p0)
+        else:
+            p = next((i for i in parentheses if s.startswith(i[0])), None)
+            if p is not None:
+                if len(stack) == 0:
+                    pair = p[1]
+                    break
+                elif stack[-1] == p[0]:
+                    del stack[-1]
         l0 -= 1
     if pair is None:
         return None
+    stack = []
     l1 = selection[1]
     while l1 < len(string):
-        s = string[l1:l1 + w]
-        for i in parentheses:
-            if i[0] is not None and s.startswith(i[0]):
-                l1 = str_range_between(string, (l1 + len(i[0]), l1 + len(i[0])), ((None, i[1]),))
-                if l1 is None:
-                    return None
-                else:
-                    l1 = l1[1] - 1
-            elif s.startswith(pair):
-                return [l0, l1 + len(pair)]
+        s = string[l1:l1 + w] # はみ出した範囲のぶんは空文字になる．
+        p1 = next((i[1] for i in parentheses if s.startswith(i[0])), None)
+        if p1 is not None:
+            stack.append(p1)
+        else:
+            p = next((i for i in parentheses if s.startswith(i[1])), None)
+            if p is not None:
+                if len(stack) == 0:
+                    if pair == p[1]:
+                        return [l0, l1 + len(pair)]
+                    else:
+                        return None
+                elif stack[-1] == p[1]:
+                    del stack[-1]
         l1 += 1
     return None
 
@@ -3113,95 +3117,95 @@ class FrameMain(wx.Frame):
 
     def menuItem_OF_calculatedOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('calculated',
-            u'他の変数から計算可能であることを表す．\n壁面でない境界におけるnutの境界条件としてよく使われる．',
-            u'value $internalField; // 実際には使わないけど必要',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/basic/calculated'),
+            '他の変数から計算可能であることを表す．\n壁面でない境界におけるnutの境界条件としてよく使われる．',
+            'value $internalField; // 実際には使わないけど必要',
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/basic/calculated'),
             indent = '\t'))
 
     def menuItem_OF_compressible_alphatWallFunctionOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('compressible::alphatWallFunction',
-            u'alphat = mut/Prt（mut: 乱流粘性係数）から壁面乱流温度拡散率を計算する．',
-            u'Prt 0.85; // 乱流プラントル数\nvalue $internalField; // 実際には使わないけど必要',
-            openfoam_src + 'TurbulenceModels/compressible/turbulentFluidThermoModels/derivedFvPatchFields/' +
+            'alphat = mut/Prt（mut: 乱流粘性係数）から壁面乱流温度拡散率を計算する．',
+            'Prt 0.85; // 乱流プラントル数\nvalue $internalField; // 実際には使わないけど必要',
+            f'{openfoam_src}TurbulenceModels/compressible/turbulentFluidThermoModels/derivedFvPatchFields/' +
             'wallFunctions/alphatWallFunctions/alphatWallFunction'),
             indent = '\t'))
 
     def menuItem_OF_compressible_turbulentTemperatureCoupledBaffleMixedOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('compressible::turbulentTemperatureCoupledBaffleMixed',
-            u'境界の両側で熱流束が一致するように温度Tを決める．\n' +
-            u'-kappa*(T_boundary - T)/delta =\n  -kappa_nbr*(T_nbr - T_boundary)/delta_nbr',
-            u'Tnbr T; // 隣接する場の名前．普通はT．\n' +
-            u'kappaMethod fluidThermo; // 境界内側の熱伝導率を指定\n// 流体側の境界ならfluidThermo，個体側の境界ならsolidThermo\n' +
-            u'value $internalField; // 実際には使わないけど必要',
-            openfoam_src + 'TurbulenceModels/compressible/turbulentFluidThermoModels/derivedFvPatchFields/' +
+            '境界の両側で熱流束が一致するように温度Tを決める．\n' +
+            '-kappa*(T_boundary - T)/delta =\n  -kappa_nbr*(T_nbr - T_boundary)/delta_nbr',
+            'Tnbr T; // 隣接する場の名前．普通はT．\n' +
+            'kappaMethod fluidThermo; // 境界内側の熱伝導率を指定\n// 流体側の境界ならfluidThermo，個体側の境界ならsolidThermo\n' +
+            'value $internalField; // 実際には使わないけど必要',
+            f'{openfoam_src}TurbulenceModels/compressible/turbulentFluidThermoModels/derivedFvPatchFields/' +
             'turbulentTemperatureCoupledBaffleMixed'),
             indent = '\t'))
 
     def menuItem_OF_compressible_turbulentTemperatureRadCoupledMixedOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('compressible::turbulentTemperatureRadCoupledMixed',
-            u'熱ふく射も含めて，境界の両側で熱流束が一致するように温度Tを決める．\n' +
-            u'-kappa*(T_boundary - T)/delta + qr =\n  -kappa_nbr*(T_nbr - T_boundary)/delta_nbr - qr_nbr +\n' +
-            u'  (delta*rho*Cp + delta_nbr*rho_nbr*Cp_nbr)*\n  (T_boundary - T_old)/dt',
-            u'kappaMethod fluidThermo; // 境界内側の熱伝導率を指定\n// 流体側の境界ならfluidThermo，個体側の境界ならsolidThermo\n' +
-            u'thermalInertia false; // 境界付近の温度の時間的変化を考慮に入れるか\n' +
-            u'// falseだとdt = ∞（定常）またはCp = 0に相当する．',
-            openfoam_src + 'TurbulenceModels/compressible/turbulentFluidThermoModels/derivedFvPatchFields/' +
+            '熱ふく射も含めて，境界の両側で熱流束が一致するように温度Tを決める．\n' +
+            '-kappa*(T_boundary - T)/delta + qr =\n  -kappa_nbr*(T_nbr - T_boundary)/delta_nbr - qr_nbr +\n' +
+            '  (delta*rho*Cp + delta_nbr*rho_nbr*Cp_nbr)*\n  (T_boundary - T_old)/dt',
+            'kappaMethod fluidThermo; // 境界内側の熱伝導率を指定\n// 流体側の境界ならfluidThermo，個体側の境界ならsolidThermo\n' +
+            'thermalInertia false; // 境界付近の温度の時間的変化を考慮に入れるか\n' +
+            '// falseだとdt = ∞（定常）またはCp = 0に相当する．',
+            f'{openfoam_src}TurbulenceModels/compressible/turbulentFluidThermoModels/derivedFvPatchFields/' +
             'turbulentTemperatureRadCoupledMixed'),
             indent = '\t'))
 
     def menuItem_OF_cyclicOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('cyclic',
-            u'周期境界\nconstant/polyMesh/boundaryで\nneighbourPatchを指定しないといけない．\n' +
+            '周期境界\nconstant/polyMesh/boundaryで\nneighbourPatchを指定しないといけない．\n' +
             'http://penguinitis.g1.xrea.com/study/OpenFOAM/cyclic/cyclic.html',
             '',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/constraint/cyclic'),
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/constraint/cyclic'),
             indent = '\t'))
 
     def menuItem_OF_emptyOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('empty',
-            u'1次元または2次元解析の時に，計算しない方向に垂直な面であることを示す．',
+            '1次元または2次元解析の時に，計算しない方向に垂直な面であることを示す．',
             '',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/constraint/empty'),
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/constraint/empty'),
             indent = '\t'))
 
     def menuItem_OF_epsilonWallFunctionOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('epsilonWallFunction',
-            u'epsilonの壁面境界条件',
-            u'value $internalField; // 実際には使わないけど必要',
-            openfoam_src + 'TurbulenceModels/turbulenceModels/derivedFvPatchFields/' +
+            'epsilonの壁面境界条件',
+            'value $internalField; // 実際には使わないけど必要',
+            f'{openfoam_src}TurbulenceModels/turbulenceModels/derivedFvPatchFields/' +
             'wallFunctions/epsilonWallFunctions/epsilonWallFunction'),
             indent = '\t'))
 
     def menuItem_OF_externalWallHeatFluxTemperatureOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('externalWallHeatFluxTemperature',
-            u'壁面からの熱伝達',
-            u'mode flux;\n// flux→熱流束q | power→熱量Q | coefficient→熱伝達率h = q/(T - Ta)\n' +
-            u'q uniform 100; // fluxの時に使用\n// Q 100; // powerの時に使用\n' +
-            u'// h 10; // coefficientの時に使用\n// Ta 500; // 外部温度, coefficientの時に使用\n' +
-            u'kappaMethod fluidThermo; // 境界内側の熱伝導率を指定\n// 流体側の境界ならfluidThermo，個体側の境界ならsolidThermo\n' +
-            u'value $internalField; // 実際には使わないけど必要',
-            openfoam_src + 'TurbulenceModels/compressible/turbulentFluidThermoModels/derivedFvPatchFields/externalWallHeatFluxTemperature'),
+            '壁面からの熱伝達',
+            'mode flux;\n// flux→熱流束q | power→熱量Q | coefficient→熱伝達率h = q/(T - Ta)\n' +
+            'q uniform 100; // fluxの時に使用\n// Q 100; // powerの時に使用\n' +
+            '// h 10; // coefficientの時に使用\n// Ta 500; // 外部温度, coefficientの時に使用\n' +
+            'kappaMethod fluidThermo; // 境界内側の熱伝導率を指定\n// 流体側の境界ならfluidThermo，個体側の境界ならsolidThermo\n' +
+            'value $internalField; // 実際には使わないけど必要',
+            f'{openfoam_src}TurbulenceModels/compressible/turbulentFluidThermoModels/derivedFvPatchFields/externalWallHeatFluxTemperature'),
             indent = '\t'))
 
     def menuItem_OF_fixedFluxPressureOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('fixedFluxPressure',
-            u'速度境界条件を満足するようにp_rghを設定',
+            '速度境界条件を満足するようにp_rghを設定',
             '',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/fixedFluxPressure'),
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/derived/fixedFluxPressure'),
             indent = '\t'))
 
     def menuItem_OF_fixedGradientyOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('fixedGradient',
-            u'こう配をgradientで決めた値にする．',
-            u'gradient uniform 1.2; // ベクトルの場合は(1.2 3.4 5.6)のように書く．',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/basic/fixedGradient'),
+            'こう配をgradientで決めた値にする．',
+            'gradient uniform 1.2; // ベクトルの場合は(1.2 3.4 5.6)のように書く．',
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/basic/fixedGradient'),
             indent = '\t'))
 
     def menuItem_OF_fixedValueOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('fixedValue',
-            u'valueで決めた値に固定',
-            u'value uniform 1.2; // ベクトルの場合は(1.2 3.4 5.6)のように書く．',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/basic/fixedValue'),
+            'valueで決めた値に固定',
+            'value uniform 1.2; // ベクトルの場合は(1.2 3.4 5.6)のように書く．',
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/basic/fixedValue'),
             indent = '\t'))
 
     def menuItem_OF_flowRateInletVelocityOnMenuSelection(self, event):
@@ -3212,7 +3216,7 @@ class FrameMain(wx.Frame):
             '// rhoInlet 1; // 密度, massFlowRateの場合に必要\n' +
             'extrapolateProfile false;\n// true→内側と相似な速度分布で流入 | false→一様流入\n' +
             'value $internalField; // 実際には使わないけど必要',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/flowRateInletVelocity'),
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/derived/flowRateInletVelocity'),
             indent = '\t'))
 
     def menuItem_OF_freestreamPressureOnMenuSelection(self, event):
@@ -3223,7 +3227,7 @@ class FrameMain(wx.Frame):
             '流出する時はfreestreamValueにする．\n' +
             '完全に同じでないときは，これらの間を連続的に変化させたものを使う．',
             'freestreamValue uniform 1.0e+05;',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/freestreamPressure'),
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/derived/freestreamPressure'),
             indent = '\t'))
 
     def menuItem_OF_freestreamVelocityOnMenuSelection(self, event):
@@ -3234,201 +3238,201 @@ class FrameMain(wx.Frame):
             '流出する時はzeroGradientにする．\n' +
             '完全に同じでないときは，これらの間を連続的に変化させたものを使う．',
             'freestreamValue uniform (100 0 0);',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/freestreamVelocity'),
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/derived/freestreamVelocity'),
             indent = '\t'))
 
     def menuItem_OF_greyDiffusiveRadiationViewFactorOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('greyDiffusiveRadiationViewFactor',
-            u'形態係数を利用してふく射による熱流速を決定する．\n' +
-            u'壁面は灰色体（ふく射率にはconstant/radiationPropertiesの中にある\nemissivityを利用？）とする．',
-            u'qro uniform 0; // 外部から入るふく射による熱流束',
-            openfoam_src + 'thermophysicalModels/radiation/derivedFvPatchFields/greyDiffusiveViewFactor'),
+            '形態係数を利用してふく射による熱流速を決定する．\n' +
+            '壁面は灰色体（ふく射率にはconstant/radiationPropertiesの中にある\nemissivityを利用？）とする．',
+            'qro uniform 0; // 外部から入るふく射による熱流束',
+            f'{openfoam_src}thermophysicalModels/radiation/derivedFvPatchFields/greyDiffusiveViewFactor'),
             indent = '\t'))
 
     def menuItem_OF_inletOutletOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('inletOutlet',
-            u'計算領域内に流入する場合→inletValueで決めた値に設定\n計算領域外に流出する場合→zeroGradient',
-            u'inletValue uniform 0; // ベクトルの場合は(1.2 3.4 5.6)のように書く．',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/inletOutlet'),
+            '計算領域内に流入する場合→inletValueで決めた値に設定\n計算領域外に流出する場合→zeroGradient',
+            'inletValue uniform 0; // ベクトルの場合は(1.2 3.4 5.6)のように書く．',
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/derived/inletOutlet'),
             indent = '\t'))
 
     def menuItem_OF_kqRWallFunctionOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('kqRWallFunction',
-            u'高レイノルズ数型乱流モデルにおけるk, q, Rの壁面境界条件\nzeroGrdientのラッパー',
-            u'value $internalField; // 実際には使わないけど必要',
-            openfoam_src + 'TurbulenceModels/turbulenceModels/derivedFvPatchFields/' +
+            '高レイノルズ数型乱流モデルにおけるk, q, Rの壁面境界条件\nzeroGrdientのラッパー',
+            'value $internalField; // 実際には使わないけど必要',
+            f'{openfoam_src}TurbulenceModels/turbulenceModels/derivedFvPatchFields/' +
             'wallFunctions/kqRWallFunctions/kqRWallFunction'),
             indent = '\t'))
 
     def menuItem_OF_movingWallVelocityOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('movingWallVelocity',
-            u'Uに使用\n移動壁面の場合のnoSlip条件，壁面が移動しなければnoSlipと同じ',
-            u'value uniform (0 0 0); // 初期速度',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/movingWallVelocity'),
+            'Uに使用\n移動壁面の場合のnoSlip条件，壁面が移動しなければnoSlipと同じ',
+            'value uniform (0 0 0); // 初期速度',
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/derived/movingWallVelocity'),
             indent = '\t'))
 
     def menuItem_OF_nutkRoughWallFunctionOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('nutkRoughWallFunction',
-            u'荒い壁面に対するnutの境界条件\n' +
-            u'nutkWallFunctionで使っている式に，\n壁面荒さ（凹凸の高さ）Ks，定数Csによる補正を加えている．\n' +
-            u'https://dergipark.org.tr/en/download/article-file/202910',
-            u'Ks uniform 0; // 単位はm，0だと滑面\nCs uniform 0.5; // 0.5 - 1.0，大きいほど荒さの影響大\n' +
-            u'value $internalField; // 実際には使わないけど必要',
-            openfoam_src + 'TurbulenceModels/turbulenceModels/derivedFvPatchFields/wallFunctions/' +
+            '荒い壁面に対するnutの境界条件\n' +
+            'nutkWallFunctionで使っている式に，\n壁面荒さ（凹凸の高さ）Ks，定数Csによる補正を加えている．\n' +
+            'https://dergipark.org.tr/en/download/article-file/202910',
+            'Ks uniform 0; // 単位はm，0だと滑面\nCs uniform 0.5; // 0.5 - 1.0，大きいほど荒さの影響大\n' +
+            'value $internalField; // 実際には使わないけど必要',
+            f'{openfoam_src}TurbulenceModels/turbulenceModels/derivedFvPatchFields/wallFunctions/' +
             'nutWallFunctions/nutkRoughWallFunction'),
             indent = '\t'))
 
     def menuItem_OF_nutkWallFunctionOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('nutkWallFunction',
-            u'nutの壁面境界条件，標準的\n' +
-            u'yPlus = C_mu^0.25*sqrt(k)*y/nuから格子中心のyPlusを求め，\n対数則領域内に格子中心があるかどうかを判断する．\n' +
-            u'ある場合，対数速度分布から得られる壁面せん断応力\ntau_w = mu*kappa*yPlus/log(E*yPlus)*(u/y)\n' +
-            u'になるように乱流粘性係数を設定する．\nhttps://www.slideshare.net/fumiyanozaki96/openfoam-36426892',
-            u'value $internalField; // 実際には使わないけど必要',
-            openfoam_src + 'TurbulenceModels/turbulenceModels/derivedFvPatchFields/wallFunctions/' +
+            'nutの壁面境界条件，標準的\n' +
+            'yPlus = C_mu^0.25*sqrt(k)*y/nuから格子中心のyPlusを求め，\n対数則領域内に格子中心があるかどうかを判断する．\n' +
+            'ある場合，対数速度分布から得られる壁面せん断応力\ntau_w = mu*kappa*yPlus/log(E*yPlus)*(u/y)\n' +
+            'になるように乱流粘性係数を設定する．\nhttps://www.slideshare.net/fumiyanozaki96/openfoam-36426892',
+            'value $internalField; // 実際には使わないけど必要',
+            f'{openfoam_src}TurbulenceModels/turbulenceModels/derivedFvPatchFields/wallFunctions/' +
             'nutWallFunctions/nutkWallFunction'),
             indent = '\t'))
 
     def menuItem_OF_nutUWallFunctionOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('nutUWallFunction',
-            u'nutの壁面境界条件\n' +
-            u'格子中心での速度u，壁からの距離y，対数速度分布から得られる関係\n' +
-            u'yPlus*log(E*yPlus) = kappa*u*y/nuから格子中心のyPlusを求め，\n対数則領域内に格子中心があるかどうかを判断する．\n' +
-            u'ある場合，対数速度分布から得られる壁面せん断応力\ntau_w = mu*kappa*yPlus/log(E*yPlus)*(u/y)\n' +
-            u'になるように乱流粘性係数を設定する．\nhttps://www.slideshare.net/fumiyanozaki96/openfoam-36426892',
-            u'value $internalField; // 実際には使わないけど必要',
-            openfoam_src + 'TurbulenceModels/turbulenceModels/derivedFvPatchFields/wallFunctions/' +
+            'nutの壁面境界条件\n' +
+            '格子中心での速度u，壁からの距離y，対数速度分布から得られる関係\n' +
+            'yPlus*log(E*yPlus) = kappa*u*y/nuから格子中心のyPlusを求め，\n対数則領域内に格子中心があるかどうかを判断する．\n' +
+            'ある場合，対数速度分布から得られる壁面せん断応力\ntau_w = mu*kappa*yPlus/log(E*yPlus)*(u/y)\n' +
+            'になるように乱流粘性係数を設定する．\nhttps://www.slideshare.net/fumiyanozaki96/openfoam-36426892',
+            'value $internalField; // 実際には使わないけど必要',
+            f'{openfoam_src}TurbulenceModels/turbulenceModels/derivedFvPatchFields/wallFunctions/' +
             'nutWallFunctions/nutUWallFunction'),
             indent = '\t'))
 
     def menuItem_OF_noSlipOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('noSlip',
-            u'U = (0 0 0)に規定',
+            'U = (0 0 0)に規定',
             '',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/noSlip'),
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/derived/noSlip'),
             indent = '\t'))
 
     def menuItem_OF_omegaWallFunctionOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('omegaWallFunction',
-            u'omegaの壁面境界条件',
-            u'value $internalField; // 実際には使わないけど必要',
-            openfoam_src + 'TurbulenceModels/turbulenceModels/derivedFvPatchFields/wallFunctions/' +
+            'omegaの壁面境界条件',
+            'value $internalField; // 実際には使わないけど必要',
+            f'{openfoam_src}TurbulenceModels/turbulenceModels/derivedFvPatchFields/wallFunctions/' +
             'omegaWallFunctions/omegaWallFunction'),
             indent = '\t'))
 
     def menuItem_OF_outletInletOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('outletInlet',
-            u'計算領域外に流出する場合→outletValueで決めた値に設定\n計算領域内に流入する場合→zeroGradient',
-            u'outletValue uniform 0; // ベクトルの場合は(1.2 3.4 5.6)のように書く．',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/outletInlet'),
+            '計算領域外に流出する場合→outletValueで決めた値に設定\n計算領域内に流入する場合→zeroGradient',
+            'outletValue uniform 0; // ベクトルの場合は(1.2 3.4 5.6)のように書く．',
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/derived/outletInlet'),
             indent = '\t'))
 
     def menuItem_OF_outletPhaseMeanVelocityOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('outletPhaseMeanVelocity',
-            u'alphaで示す相の平均流出流速がUmeanになるように規定する．\n' +
-            u'典型的な例としては，曳航水槽による船周りの流れシミュレーションで，\n入口と出口の水位が同じになるようにする場合に使う．',
+            'alphaで示す相の平均流出流速がUmeanになるように規定する．\n' +
+            '典型的な例としては，曳航水槽による船周りの流れシミュレーションで，\n入口と出口の水位が同じになるようにする場合に使う．',
             'alpha alpha.water;\nUmean 1.2;',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/outletPhaseMeanVelocity'),
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/derived/outletPhaseMeanVelocity'),
             indent = '\t'))
 
     def menuItem_OF_pressureInletOutletVelocityOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('pressureInletOutletVelocity',
-            u'Uに使用\n計算領域内に流入する場合→垂直方向成分はこう配が0，\n接線方向成分はtangentialVelocityのうちの接線方向成分のみ\n' +
-            u'計算領域外に流出する場合→全成分でこう配が0',
-            u'tangentialVelocity uniform (0 0 0);\nvalue $internalField; // 実際には使わないけど必要',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/pressureInletOutletVelocity'),
+            'Uに使用\n計算領域内に流入する場合→垂直方向成分はこう配が0，\n接線方向成分はtangentialVelocityのうちの接線方向成分のみ\n' +
+            '計算領域外に流出する場合→全成分でこう配が0',
+            'tangentialVelocity uniform (0 0 0);\nvalue $internalField; // 実際には使わないけど必要',
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/derived/pressureInletOutletVelocity'),
             indent = '\t'))
 
     def menuItem_OF_prghPressureOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('prghPressure',
-            u'p_rghに使用\n設定したいpの値からp_rghを計算して設定する．\n対応するパッチのpにはcalculatedを使う．',
-            u'rho rhok; // 計算で用いる密度の変数名，rhoまたはrhok\n// pの次元がPaの場合→rho，m^2/s^2にの場合→rhok\n' +
-            u'p uniform 0; // 設定したいpの値',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/prghPressure'),
+            'p_rghに使用\n設定したいpの値からp_rghを計算して設定する．\n対応するパッチのpにはcalculatedを使う．',
+            'rho rhok; // 計算で用いる密度の変数名，rhoまたはrhok\n// pの次元がPaの場合→rho，m^2/s^2にの場合→rhok\n' +
+            'p uniform 0; // 設定したいpの値',
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/derived/prghPressure'),
             indent = '\t'))
 
     def menuItem_OF_rotatingWallVelocityOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('rotatingWallVelocity',
-            u'速度を回転物体表面の速度と一致させる',
-            u'origin (0 0 0); // 回転中心\n' +
-            u'axis (0 0 1); // 回転軸\n' +
-            u'omega (0 0 1); // 右ねじが進む向きを正とした角速度 [rps]',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/rotatingWallVelocity'),
+            '速度を回転物体表面の速度と一致させる',
+            'origin (0 0 0); // 回転中心\n' +
+            'axis (0 0 1); // 回転軸\n' +
+            'omega (0 0 1); // 右ねじが進む向きを正とした角速度 [rps]',
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/derived/rotatingWallVelocity'),
             indent = '\t'))
 
     def menuItem_OF_slipOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('slip',
-            u'非粘性流れの壁面境界条件',
+            '非粘性流れの壁面境界条件',
             '',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/slip'),
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/derived/slip'),
             indent = '\t'))
 
     def menuItem_OF_surfaceNormalFixedValueOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('surfaceNormalFixedValue',
-            u'境界に垂直な方向の速度を外向きを正として設定し，平行方向の速度は0にする．',
-            u'refValue uniform -10; // 垂直方向速度',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/surfaceNormalFixedValue'),
+            '境界に垂直な方向の速度を外向きを正として設定し，平行方向の速度は0にする．',
+            'refValue uniform -10; // 垂直方向速度',
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/derived/surfaceNormalFixedValue'),
             indent = '\t'))
 
     def menuItem_OF_symmetryOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('symmetry',
-            u'対称境界，境界が曲がっていても使える',
+            '対称境界，境界が曲がっていても使える',
             '',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/constraint/symmetry'),
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/constraint/symmetry'),
             indent = '\t'))
 
     def menuItem_OF_symmetryPlaneOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('symmetryPlane',
-            u'対称境界，完全な平面にしか使えない',
+            '対称境界，完全な平面にしか使えない',
             '',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/constraint/symmetryPlane'),
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/constraint/symmetryPlane'),
             indent = '\t'))
 
     def menuItem_OF_totalPressureOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('totalPressure',
-            u'pまたはp_rghに使用\np0で決めた値が全圧（p_rghの場合は全圧 + rho*g*z）になるように設定',
+            'pまたはp_rghに使用\np0で決めた値が全圧（p_rghの場合は全圧 + rho*g*z）になるように設定',
             'p0 uniform 0;',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/totalPressure'),
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/derived/totalPressure'),
             indent = '\t'))
 
     def menuItem_OF_turbulentIntensityKineticEnergyInletOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('turbulentIntensityKineticEnergyInlet',
-            u'計算領域内に流入する場合→k = 1.5*(intensity*局所速度)^2に規定\n計算領域外に流出する場合→zeroGradient',
-            u'intensity 0.05;\nvalue $internalField; // 実際には使わないけど必要',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/turbulentIntensityKineticEnergyInlet'),
+            '計算領域内に流入する場合→k = 1.5*(intensity*局所速度)^2に規定\n計算領域外に流出する場合→zeroGradient',
+            'intensity 0.05;\nvalue $internalField; // 実際には使わないけど必要',
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/derived/turbulentIntensityKineticEnergyInlet'),
             indent = '\t'))
 
     def menuItem_OF_turbulentMixingLengthDissipationRateInletOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('turbulentMixingLengthDissipationRateInlet',
-            u'計算領域内に流入する場合→epsilon = C_mu^0.75*k^1.5/混合距離, C_mu = 0.09に規定\n計算領域外に流出する場合→zeroGradient',
-            u'mixingLength 0.001; // 混合距離，ふつうは0.07*管内径ぐらいの大きさ\nvalue $internalField; // 実際には使わないけど必要',
-            openfoam_src + 'TurbulenceModels/turbulenceModels/RAS/derivedFvPatchFields/' +
+            '計算領域内に流入する場合→epsilon = C_mu^0.75*k^1.5/混合距離, C_mu = 0.09に規定\n計算領域外に流出する場合→zeroGradient',
+            'mixingLength 0.001; // 混合距離，ふつうは0.07*管内径ぐらいの大きさ\nvalue $internalField; // 実際には使わないけど必要',
+            f'{openfoam_src}TurbulenceModels/turbulenceModels/RAS/derivedFvPatchFields/' +
             'turbulentMixingLengthDissipationRateInlet'),
             indent = '\t'))
 
     def menuItem_OF_turbulentMixingLengthFrequencyInletOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('turbulentMixingLengthFrequencyInlet',
-            u'計算領域内に流入する場合→omega = k^0.5/(C_mu^0.25*混合距離), C_mu = 0.09に規定\n計算領域外に流出する場合→zeroGradient',
-            u'mixingLength 0.001; // 混合距離，ふつうは0.07*管内径ぐらいの大きさ\nvalue $internalField; // 実際には使わないけど必要',
-            openfoam_src + 'TurbulenceModels/turbulenceModels/RAS/derivedFvPatchFields/' +
+            '計算領域内に流入する場合→omega = k^0.5/(C_mu^0.25*混合距離), C_mu = 0.09に規定\n計算領域外に流出する場合→zeroGradient',
+            'mixingLength 0.001; // 混合距離，ふつうは0.07*管内径ぐらいの大きさ\nvalue $internalField; // 実際には使わないけど必要',
+            f'{openfoam_src}TurbulenceModels/turbulenceModels/RAS/derivedFvPatchFields/' +
             'turbulentMixingLengthFrequencyInlet'),
             indent = '\t'))
 
     def menuItem_OF_variableHeightFlowRateOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('variableHeightFlowRate',
-            u'alphaに使用\n' +
-            u'alpha < lowerBoundの時→alpha = lowerBound，\n' +
+            'alphaに使用\n' +
+            'alpha < lowerBoundの時→alpha = lowerBound，\n' +
             'lowerBound < alpha < upperBoundの時→zeroGradient，\n' +
-            u'upperBound < alpha の時→alpha = upperBound',
+            'upperBound < alpha の時→alpha = upperBound',
             'lowerBound 0.0;\nupperBound 1.0;',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/derived/variableHeightFlowRate'),
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/derived/variableHeightFlowRate'),
             indent = '\t'))
 
     def menuItem_OF_zeroGradientOnMenuSelection(self, event):
         self.textCtrl_edit.WriteText(openfoam_bc_template_string(('zeroGradient',
-            u'こう配が0，境界での値 = セル中心での値にする．',
+            'こう配が0，境界での値 = セル中心での値にする．',
             '',
-            openfoam_src + 'finiteVolume/fields/fvPatchFields/basic/zeroGradient'),
+            f'{openfoam_src}finiteVolume/fields/fvPatchFields/basic/zeroGradient'),
             indent = '\t'))
 
     def menuItem_updateOnMenuSelection(self, event):
