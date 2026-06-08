@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/5/28 2:56:48 PM
+# 2026/6/8 9:10:59 PM
 
-version = '2026/5/28 2:56:48 PM'
+version = '2026/6/8 9:10:59 PM'
 
 import sys
 
@@ -2182,13 +2182,18 @@ class FrameMain(wx.Frame):
         self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
         self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
 
-#        font = wx.Font(pointSize = 12, family = wx.FONTFAMILY_TELETYPE, style = wx.FONTSTYLE_NORMAL,
-#            weight = wx.FONTWEIGHT_NORMAL, underline = False, faceName = (u'ＭＳ ゴシック' if sys.platform == 'win32'
-#            else ('Monaco' if sys.platform == 'darwin' else 'Ubuntu Mono')))
+        def get_platform_monospaced_font():
+            if sys.platform == 'win32':
+                candidates = ['Consolas', 'MS Gothic', 'Courier New']
+            elif sys.platform == 'darwin': # macOS
+                candidates = ['Monaco', 'Menlo', 'SF Mono']
+            else: # Linux
+                candidates = ['DejaVu Sans Mono', 'Liberation Mono', 'Ubuntu Mono', 'monospace']
+            for font_name in candidates:
+                if wx.FontEnumerator.IsValidFacename(font_name):
+                    return font_name
         font = wx.Font(pointSize = 12, family = wx.FONTFAMILY_TELETYPE, style = wx.FONTSTYLE_NORMAL,
-            weight = wx.FONTWEIGHT_NORMAL, underline = False, faceName = (u'ＭＳ ゴシック' if sys.platform == 'win32'
-            else ('Monaco' if sys.platform == 'darwin' else 'Ubuntu Mono')))
-        font.SetFamily(wx.FONTFAMILY_TELETYPE)
+            weight = wx.FONTWEIGHT_NORMAL, underline = False, faceName = get_platform_monospaced_font())
 
         bSizer1 = wx.BoxSizer(wx.VERTICAL)
 
