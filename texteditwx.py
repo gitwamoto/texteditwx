@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/6/8 9:10:59 PM
+# 2026/6/8 9:41:22 PM
 
-version = '2026/6/8 9:10:59 PM'
+version = '2026/6/8 9:41:22 PM'
 
 import sys
 
@@ -844,7 +844,7 @@ class MyTextCtrl(wx.TextCtrl):
             size = wx.DefaultSize, style = 0, font = None):
         if sys.platform == 'win32' and value == wx.EmptyString:
             # Font is never reflected as long as value is empty
-            super(MyTextCtrl, self).__init__(parent, id, ' ', pos, size, style)
+            super(MyTextCtrl, self).__init__(parent, id, ' ' + value, pos, size, style)
             self.SetSelection(0, 1)
         else:
             super(MyTextCtrl, self).__init__(parent, id, value, pos, size, style)
