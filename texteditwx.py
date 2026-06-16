@@ -46,7 +46,7 @@ def encode_if_necessary(s):
 # (1) mkdir -p locale/en/LC_MESSAGES
 # (2) If you already have old locale/en/LC_MESSAGES/messages.po, rename it by following command:
 #     mv locale/en/LC_MESSAGES/messages.po locale/en/LC_MESSAGES/messages.po.old
-# (3) xgettext -o locale/messages.pot matplotlibwx.py && msginit --locale=en --input=locale/messages.pot --output-file=locale/en/LC_MESSAGES/messages.po
+# (3) xgettext -o locale/messages.pot texteditwx.py && msginit --locale=en --input=locale/messages.pot --output-file=locale/en/LC_MESSAGES/messages.po
 # (4) If you did not skip the step (2), merge files by following command:
 #     msgmerge locale/en/LC_MESSAGES/messages.po.old locale/en/LC_MESSAGES/messages.po --output-file=locale/en/LC_MESSAGES/messages.po
 #     rm locale/en/LC_MESSAGES/messages.po.old
