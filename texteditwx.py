@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/6/8 9:41:22 PM
+# 2026/6/25 8:11:10 PM
 
-version = '2026/6/8 9:41:22 PM'
+version = '2026/6/25 8:11:10 PM'
 
 import sys
 
@@ -221,6 +221,8 @@ def str_levels(string, parentheses = None, literals = None, literal_escape = '',
             old_index = index
             for i in line_comments:
                 if s.startswith(i):
+                    if start != index:
+                        levels.append([start, index, level])
                     levels.append([start, index, level])
                     while index < len(string):
                         index += 1
@@ -232,6 +234,8 @@ def str_levels(string, parentheses = None, literals = None, literal_escape = '',
                     start = index # levelsに追加したのでstartを更新
             for i in literals:
                 if i[0] is not None and s.startswith(i[0]):
+                    if start != index:
+                        levels.append([start, index, level])
                     levels.append([start, index, level])
                     index += len(i[0])
                     if index == len(string):
@@ -250,7 +254,8 @@ def str_levels(string, parentheses = None, literals = None, literal_escape = '',
                         return levels, index
             for i in parentheses:
                 if i[0] is not None and s.startswith(i[0]):
-                    levels.append([start, index, level])
+                    if start != index:
+                        levels.append([start, index, level])
                     index += len(i[0])
                     if index == len(string):
                         levels.append([old_index, index, level + 1])
@@ -3052,8 +3057,8 @@ class FrameMain(wx.Frame):
         self.textCtrl_edit.reset_styles()
 
     def menuItem_insert_returnOnMenuSelection(self, event):
-        self.textCtrl_edit.WriteText(re.sub('^(\\-|\\+)\\n', '\\1',
-            self.textCtrl_edit.re_sub_in_top_level('(,|\\+|\\-|=)\\s*', '\\1\n',
+        self.textCtrl_edit.WriteText(re.sub(r'^([+\-])\n', r'\1',
+            self.textCtrl_edit.re_sub_in_top_level(r'([,+\-=])\s*', '\\1\n',
                 parentheses = (('(', ')'), ('{', '}'), ('[', ']')),
                 literals = (('"', '"'), ("'", "'")), literal_escape = '\\',
                 line_comments = ('#', '//'))))
