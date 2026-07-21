@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/6/25 8:11:10 PM
+# 2026/7/21 10:04:47 AM
 
-version = "2026/6/25 8:11:10 PM"
+version = "2026/7/21 10:04:47 AM"
 
 import sys
 
@@ -754,6 +754,8 @@ class Maxima(object):
                             and m.group() == "/"
                         )
                     ):  # conversion (a*b)/c = a*b/c is done here
+                        if r.endswith("+") and inside.startswith("-"): # +- -> -
+                            r = r[:-1]
                         r += inside + s[: m.end()]
                     else:  # append parentheses in the case of %e^-(a*b)
                         r += "(" + inside + ")" + s[: m.end()]
