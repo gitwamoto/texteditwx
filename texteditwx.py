@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/7/21 10:04:47 AM
+# 2026/7/24 4:32:10 PM
 
-version = "2026/7/21 10:04:47 AM"
+version = "2026/7/24 4:32:10 PM"
 
 import sys
 
@@ -276,7 +276,6 @@ def str_levels(
                 if s.startswith(i):
                     if start != index:
                         levels.append([start, index, level])
-                    levels.append([start, index, level])
                     while index < len(string):
                         index += 1
                         s = string[
@@ -291,7 +290,6 @@ def str_levels(
                 if i[0] is not None and s.startswith(i[0]):
                     if start != index:
                         levels.append([start, index, level])
-                    levels.append([start, index, level])
                     index += len(i[0])
                     if index == len(string):
                         levels.append([old_index, index, level + 1])
@@ -456,7 +454,7 @@ class Maxima(object):
             ):
                 self.maxima.before = self.maxima.before[: -len(self.maxima.after)]
         except:
-            #            print(sys.exc_info())
+#            print(sys.exc_info())
             with wx.MessageDialog(
                 None,
                 _("{}\nMaximaを再起動します．").format(sys.exc_info()[0]),
@@ -1197,7 +1195,7 @@ class MyTextCtrl(wx.TextCtrl):
         )
 
     def OnCharHook(self, event):
-        #        print(event.GetKeyCode())
+#        print(event.GetKeyCode())
         if sys.platform.startswith("linux"):
             if event.GetModifiers() == wx.MOD_SHIFT:
                 if event.GetKeyCode() in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
@@ -1418,7 +1416,7 @@ class MyTextCtrl(wx.TextCtrl):
                 self.completion_candidates[self.completion_index],
                 record_op=False,
             )
-            #            self.SetSelection(self.completion_from, self.GetInsertionPoint())
+#            self.SetSelection(self.completion_from, self.GetInsertionPoint())
             self.completion_index += 1
 
     def completion_backward(self):
@@ -1434,7 +1432,7 @@ class MyTextCtrl(wx.TextCtrl):
                 self.completion_candidates[self.completion_index],
                 record_op=False,
             )
-            #            self.SetSelection(self.completion_from, self.GetInsertionPoint())
+#            self.SetSelection(self.completion_from, self.GetInsertionPoint())
             self.completion_index += 1
 
     def send_commands_to_maxima(self):
@@ -1479,7 +1477,7 @@ class MyTextCtrl(wx.TextCtrl):
                     j = self.GetInsertionPoint()
                     self.SetSelection(j - l_output, j)
             except:
-                #                print(sys.exc_info())
+#                print(sys.exc_info())
                 pass
         else:
             try:
@@ -1490,7 +1488,7 @@ class MyTextCtrl(wx.TextCtrl):
                 j = self.GetInsertionPoint()
                 self.SetSelection(j - l_output, j)
             except:
-                #                print(sys.exc_info())
+#                print(sys.exc_info())
                 pass
 
     def set_negative(self):
@@ -1508,7 +1506,7 @@ class MyTextCtrl(wx.TextCtrl):
                 self.Replace(s[0], s[1], v)
                 self.SetSelection(s[0], s[0] + len(v))
             except:
-                #                print(sys.exc_info())
+#                print(sys.exc_info())
                 pass
 
     def set_reciprocal(self):
@@ -1525,7 +1523,7 @@ class MyTextCtrl(wx.TextCtrl):
                 self.Replace(s[0], s[1], v)
                 self.SetSelection(s[0], s[0] + len(v))
             except:
-                #                print(sys.exc_info())
+#                print(sys.exc_info())
                 pass
 
     def multiply(self, multiplier):
@@ -1551,7 +1549,7 @@ class MyTextCtrl(wx.TextCtrl):
                 self.Replace(s[0], s[1], v)
                 self.SetSelection(s[0], s[0] + len(v))
             except:
-                #                print(sys.exc_info())
+#                print(sys.exc_info())
                 pass
 
     def plus(self, additive):
@@ -1572,7 +1570,7 @@ class MyTextCtrl(wx.TextCtrl):
                 self.Replace(s[0], s[1], v)
                 self.SetSelection(s[0], s[0] + len(v))
             except:
-                #                print(sys.exc_info())
+#                print(sys.exc_info())
                 pass
 
     def power(self, exponent):
@@ -1594,7 +1592,7 @@ class MyTextCtrl(wx.TextCtrl):
                 self.Replace(s[0], s[1], v)
                 self.SetSelection(s[0], s[0] + len(v))
             except:
-                #                print(sys.exc_info())
+#                print(sys.exc_info())
                 pass
 
     def exchange_hands(self):
@@ -2050,7 +2048,7 @@ class GridWithCellToolTip(wx.grid.Grid):
                     s = ""
                 event.GetEventObject().SetToolTip(s)
         except:
-            #            print(sys.exc_info())
+#            print(sys.exc_info())
             pass
         event.Skip()
 
@@ -2441,11 +2439,11 @@ class DialogFind(wx.Dialog):
         t = self.grid_find.table
         row = self.grid_find.GetGridCursorRow()
         t.data[row][t.COL_RE] = True
-        #        t.data[row][t.COL_FIND] = (r'([\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#~]|^)' +
-        #            ('' if t.data[row][t.COL_FIND] is None else t.data[row][t.COL_FIND]) +
-        #            r'(?=[\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#]|$)')
-        #        t.data[row][t.COL_REPLACE] = (r'\1' +
-        #            ('' if t.data[row][t.COL_REPLACE] is None else t.data[row][t.COL_REPLACE]))
+#        t.data[row][t.COL_FIND] = (r'([\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#~]|^)' +
+#            ('' if t.data[row][t.COL_FIND] is None else t.data[row][t.COL_FIND]) +
+#            r'(?=[\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#]|$)')
+#        t.data[row][t.COL_REPLACE] = (r'\1' +
+#            ('' if t.data[row][t.COL_REPLACE] is None else t.data[row][t.COL_REPLACE]))
         t.data[row][t.COL_FIND] = (
             r"\b"
             + ("" if t.data[row][t.COL_FIND] is None else t.data[row][t.COL_FIND])
@@ -2454,7 +2452,7 @@ class DialogFind(wx.Dialog):
         self.grid_find.ForceRefresh()
 
     def button_colorizeOnButtonClick(self, event):
-        #        self.target.reset_styles()
+#        self.target.reset_styles()
         v = self.target.GetValue()
         n = 0
         found = []
@@ -5208,7 +5206,7 @@ class FrameMain(wx.Frame):
         )
 
     def menuItem_updateOnMenuSelection(self, event):
-        #        s = get_file_from_google_drive('1Rm9P1CIbn_YUuvpMYj39MSF7djuVnPPV')
+#        s = get_file_from_google_drive('1Rm9P1CIbn_YUuvpMYj39MSF7djuVnPPV')
         s = get_file_from_github_public(
             user="gitwamoto",
             repository="texteditwx",
@@ -5232,29 +5230,29 @@ class FrameMain(wx.Frame):
             with open(p, "wb") as f:
                 f.write(s[0])
             pd = os.path.dirname(p)
-            #            d = os.path.join(pd, 'locale', 'en', 'LC_MESSAGES')
-            #            if not os.path.isdir(d):
-            #                os.makedirs(d)
-            #            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
-            #                branch = 'main', file_path = 'locale/en/LC_MESSAGES/messages.mo')
-            #            if s is not None:
-            #                with open(os.path.join(d, 'messages.mo'), 'wb') as f:
-            #                    f.write(s[0])
-            #            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
-            #                branch = 'main', file_path = 'locale/en/LC_MESSAGES/messages.po')
-            #            if s is not None:
-            #                with open(os.path.join(d, 'messages.po'), 'wb') as f:
-            #                    f.write(s[0])
-            #            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
-            #                branch = 'main', file_path = 'locale/messages.pot')
-            #            if s is not None:
-            #                with open(os.path.join(pd, 'locale', 'messages.pot'), 'wb') as f:
-            #                    f.write(s[0])
-            #            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
-            #                branch = 'main', file_path = 'README.md')
-            #            if s is not None:
-            #                with open(os.path.join(pd, 'README.md'), 'wb') as f:
-            #                    f.write(s[0])
+#            d = os.path.join(pd, 'locale', 'en', 'LC_MESSAGES')
+#            if not os.path.isdir(d):
+#                os.makedirs(d)
+#            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
+#                branch = 'main', file_path = 'locale/en/LC_MESSAGES/messages.mo')
+#            if s is not None:
+#                with open(os.path.join(d, 'messages.mo'), 'wb') as f:
+#                    f.write(s[0])
+#            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
+#                branch = 'main', file_path = 'locale/en/LC_MESSAGES/messages.po')
+#            if s is not None:
+#                with open(os.path.join(d, 'messages.po'), 'wb') as f:
+#                    f.write(s[0])
+#            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
+#                branch = 'main', file_path = 'locale/messages.pot')
+#            if s is not None:
+#                with open(os.path.join(pd, 'locale', 'messages.pot'), 'wb') as f:
+#                    f.write(s[0])
+#            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
+#                branch = 'main', file_path = 'README.md')
+#            if s is not None:
+#                with open(os.path.join(pd, 'README.md'), 'wb') as f:
+#                    f.write(s[0])
             if os.path.isfile(os.path.join(pd, "modules_needed.txt")):
                 os.remove(os.path.join(pd, "modules_needed.txt"))
             with wx.MessageDialog(
