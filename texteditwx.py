@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/7/24 4:32:10 PM
+# 2026/8/23 3:43:42 PM
 
 version = "2026/7/24 4:32:10 PM"
 
@@ -3542,6 +3542,10 @@ class FrameMain(wx.Frame):
         self.menu_OF_bc_C.Append(
             self.menuItem_OF_compressible_turbulentTemperatureRadCoupledMixed
         )
+        self.menuItem_OF_constantAlphaContactAngle = wx.MenuItem(
+            self.menu_OF, wx.ID_ANY, "constantAlphaContactAngle", wx.EmptyString, wx.ITEM_NORMAL
+        )
+        self.menu_OF_bc_C.Append(self.menuItem_OF_constantAlphaContactAngle)
         self.menuItem_OF_cyclic = wx.MenuItem(
             self.menu_OF, wx.ID_ANY, "cyclic", wx.EmptyString, wx.ITEM_NORMAL
         )
@@ -4097,6 +4101,11 @@ class FrameMain(wx.Frame):
             wx.EVT_MENU,
             self.menuItem_OF_compressible_turbulentTemperatureRadCoupledMixedOnMenuSelection,
             id=self.menuItem_OF_compressible_turbulentTemperatureRadCoupledMixed.GetId(),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            self.menuItem_OF_constantAlphaContactAngleOnMenuSelection,
+            id=self.menuItem_OF_constantAlphaContactAngle.GetId(),
         )
         self.Bind(
             wx.EVT_MENU,
@@ -4712,6 +4721,23 @@ class FrameMain(wx.Frame):
                     + "// falseだとdt = ∞（定常）またはCp = 0に相当する．",
                     f"{openfoam_src}TurbulenceModels/compressible/turbulentFluidThermoModels/derivedFvPatchFields/"
                     + "turbulentTemperatureRadCoupledMixed",
+                ),
+                indent="\t",
+            )
+        )
+
+    def menuItem_OF_constantAlphaContactAngleOnMenuSelection(self, event):
+        self.textCtrl_edit.WriteText(
+            openfoam_bc_template_string(
+                (
+                    "constantAlphaContactAngle",
+                    "alphaに対して，気液界面での静的接触角theta0 [deg]を規定する．\n"
+                    + "constant/transportPropertiesで表面張力sigma [N/m]を設定する必要がある．",
+                    "theta0 30; // 静的接触角 [deg]\n"
+                    + "limit gradient; // alphaが壁面上で0〜1に収まるように，alphaのこう配を制限する．\n"
+                    + "// 他にnone, alpha, zeroGradientのオプションがある．\n"
+                    + "value $internalField; // 実際には使わないけど必要",
+                    f"{openfoam_src}transportModels/twoPhaseProperties/alphaContactAngle/constantAlphaContactAngle",
                 ),
                 indent="\t",
             )
