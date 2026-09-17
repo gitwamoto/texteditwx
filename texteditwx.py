@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/8/23 3:43:42 PM
+# 2026/9/17 8:38:26 PM
 
-version = "2026/7/24 4:32:10 PM"
+version = "2026/9/17 8:38:26 PM"
 
 import sys
 
@@ -313,14 +313,19 @@ def str_levels(
                 if i[0] is not None and s.startswith(i[0]):
                     if start != index:
                         levels.append([start, index, level])
+                    p_start = index  # 「かっこ始まり文字列」先頭のインデックス
                     index += len(i[0])
+                    p_end = index  # 「かっこ始まり文字列」末尾のインデックス
                     if index == len(string):
                         levels.append([old_index, index, level + 1])
                     else:
                         l, index = str_levels_local(
                             parentheses, literals, line_comments, index, level + 1
                         )
-                        l[0][0] = old_index  # 先頭のstartを修正
+                        if l[0][2] == level + 1:  # 先頭のstartを修正
+                            l[0][0] = old_index
+                        else:  # 「かっこ始まり文字列」の直後でレベルが変わった場合，「かっこ始まり文字列」の領域を追加する
+                            levels.append([p_start, p_end, level + 1])
                         levels.extend(l)
                     start = index  # levelsに追加したのでstartを更新
                 elif s.startswith(i[1]):
