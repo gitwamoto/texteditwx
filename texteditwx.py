@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/9/17 8:38:26 PM
+# 2026/10/14 3:20:15 PM
 
-version = "2026/9/17 8:38:26 PM"
+version = "2026/10/14 3:20:15 PM"
 
 import sys
 
@@ -1984,7 +1984,9 @@ class TableForFind(MyTable):
                     "'"
                     + i[self.COL_FIND]
                     .replace("\\", r"\\")
+                    .replace("\r\n", r"\n")
                     .replace("\n", r"\n")
+                    .replace("\r", r"\n")
                     .replace("'", r"\'")
                     + "', "
                 )
@@ -1995,7 +1997,9 @@ class TableForFind(MyTable):
                     "'"
                     + i[self.COL_REPLACE]
                     .replace("\\", r"\\")
+                    .replace("\r\n", r"\n")
                     .replace("\n", r"\n")
+                    .replace("\r", r"\n")
                     .replace("'", r"\'")
                     + "'], "
                 )
