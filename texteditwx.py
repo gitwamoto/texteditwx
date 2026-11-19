@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/10/14 3:20:15 PM
+# 2026/11/19 9:50:46 PM
 
-version = "2026/10/14 3:20:15 PM"
+version = "2026/11/19 9:50:46 PM"
 
 import sys
 
@@ -459,7 +459,7 @@ class Maxima(object):
             ):
                 self.maxima.before = self.maxima.before[: -len(self.maxima.after)]
         except:
-#            print(sys.exc_info())
+            #            print(sys.exc_info())
             with wx.MessageDialog(
                 None,
                 _("{}\nMaximaを再起動します．").format(sys.exc_info()[0]),
@@ -510,14 +510,14 @@ class Maxima(object):
         if commands_list_remain is not None:
             self.commands_list.extend(commands_list_remain)
         if debug:
-            print("    commands_list = {}".format(self.commands_list))
+            print(f"    commands_list = {self.commands_list}")
         outputs = []
         while len(self.commands_list) > 0:
             c = self.commands_list.pop(0)
             self.maxima.sendline(c)
             if debug:
                 print("    ----------")
-                print('    command = "{}"'.format(c))
+                print(f'    command = "{c}"')
             try:
                 self.expect(
                     r"(\(%i\d+\)|Enter space-separated numbers, `all' or `none':|.+\?)\s*$"
@@ -527,8 +527,8 @@ class Maxima(object):
             if self.maxima.before.startswith(c + "\n"):
                 self.maxima.before = self.maxima.before[len(c) + 1 :]
             if debug:
-                print('    before = "{}"'.format(self.maxima.before))
-                print('    after = "{}"'.format(self.maxima.after))
+                print(f'    before = "{self.maxima.before}"')
+                print(f'    after = "{self.maxima.after}"')
             if self.maxima.after.startswith("(%i"):
                 self.last_input = self.maxima.after
                 s = self.maxima.before.lstrip("\n").rstrip()
@@ -538,7 +538,7 @@ class Maxima(object):
                         self.maxima.before = self.maxima.before[len(c) + 1 :]
                     s = self.maxima.before.lstrip("\n").rstrip()
                 if debug:
-                    print('    s = "{}"'.format(s))
+                    print(f'    s = "{s}"')
                 if c.endswith("$") and (
                     s == "" or s.startswith("(%i") or s.endswith("$")
                 ):
@@ -608,11 +608,11 @@ class Maxima(object):
                     if replace:
                         s = c + "\n" + s
                 else:
-                    print("\n----- UNCLEAR OUTPUT -----\n{}\n".format(s))
+                    print(f"\n----- UNCLEAR OUTPUT -----\n{s}\n")
                     l_output = 0
                     continue
                 if debug:
-                    print('    outputs = "{}"'.format(s))
+                    print(f'    outputs = "{s}"')
                     print("    ----------")
                 outputs.append(s)
             elif self.maxima.after.startswith(
@@ -642,7 +642,7 @@ class Maxima(object):
         debug = False
         if debug:
             print("remove_redundant_parentheses")
-            print('    initial string = "{}"'.format(s))
+            print(f'    initial string = "{s}"')
         if len(s) == 0:
             return "", 0, ""
         priority = {
@@ -685,18 +685,18 @@ class Maxima(object):
         )  # 書き換えたらpat_operatorの?P<operator>も書き換える
         while len(s) > 0:
             if debug:
-                print('    while, s = "{}"'.format(s))
+                print(f'    while, s = "{s}"')
             m = pat.search(s)
             if not m:
                 r += s
                 if debug:
-                    print('    no operator/function/(, r = "{}"'.format(r))
+                    print(f'    no operator/function/(, r = "{r}"')
                 break
             if m.lastgroup == "string":
                 r += s[: m.end()]
                 s = s[m.end() :]
                 if debug:
-                    print('    skip string, r = "{}"'.format(r))
+                    print(f'    skip string, r = "{r}"')
             elif m.lastgroup == "operator":
                 last_priority = priority[m.group()]
                 if (
@@ -708,14 +708,10 @@ class Maxima(object):
                 r += s[: m.end()]
                 s = s[m.end() :]
                 if debug:
-                    print(
-                        "    operator {}, min_priority = {}".format(
-                            m.group(), min_priority
-                        )
-                    )
+                    print(f"    operator {m.group()}, min_priority = {min_priority}")
             elif m.group("function") is not None:
                 if debug:
-                    print('    function = "{}", '.format(m.group("function")))
+                    print(f'    function = "{m.group("function")}", ')
                 r += s[: m.end()]
                 inside, _, s = Maxima.remove_redundant_parentheses(s[m.end() :])
                 if (
@@ -727,25 +723,23 @@ class Maxima(object):
                 else:
                     r += inside + ")"
                 if debug:
-                    print('    function, r = "{}", '.format(r))
+                    print(f'    function, r = "{r}", ')
             elif m.lastgroup == "parenthesis_start":
                 r += s[: m.end() - 1]  # string before '('
                 if debug:
                     print("    (")
-                    print('        r = "{}"'.format(r))
+                    print(f'        r = "{r}"')
                 inside, inside_priority, s = Maxima.remove_redundant_parentheses(
                     s[m.end() :]
                 )
                 if debug:
                     print(
-                        '        inside = "{}", inside_priority = {}, s = "{}"'.format(
-                            inside, inside_priority, s
-                        )
+                        f'        inside = "{inside}", inside_priority = {inside_priority}, s = "{s}"'
                     )
                 m = pat_operator.match(s)
                 if m:
                     if debug:
-                        print('        following operator = "{}"'.format(m.group()))
+                        print(f'        following operator = "{m.group()}"')
                     if not r.endswith("%e^-") and (
                         (
                             last_priority == priority["="]
@@ -757,7 +751,7 @@ class Maxima(object):
                             and m.group() == "/"
                         )
                     ):  # conversion (a*b)/c = a*b/c is done here
-                        if r.endswith("+") and inside.startswith("-"): # +- -> -
+                        if r.endswith("+") and inside.startswith("-"):  # +- -> -
                             r = r[:-1]
                         r += inside + s[: m.end()]
                     else:  # append parentheses in the case of %e^-(a*b)
@@ -774,36 +768,34 @@ class Maxima(object):
                     else:  # append parentheses in the case of %e^-(a*b)
                         r += "(" + inside + ")"
                 if debug:
-                    print(
-                        '        r = "{}", min_priority = "{}"'.format(r, min_priority)
-                    )
+                    print(f'        r = "{r}", min_priority = "{min_priority}"')
             elif m.lastgroup == "parenthesis_end":
                 r += s[: m.end() - 1]  # string before ')'
                 if debug:
-                    print('    ), r = "{}", remainder = "{}"'.format(r, s[m.end() :]))
+                    print(f'    ), r = "{r}", remainder = "{s[m.end() :]}"')
                 return r, min_priority, s[m.end() :]
             elif m.lastgroup == "bracket_start":
                 r += s[: m.end()]  # string until '['
                 if debug:
                     print("    [")
-                    print('        r = "{}"'.format(r))
+                    print(f'        r = "{r}"')
                 inside, _, s = Maxima.remove_redundant_parentheses(s[m.end() :])
                 r += inside  # including ']'
                 if debug:
-                    print('        r = "{}"'.format(r))
+                    print(f'        r = "{r}"')
             elif m.lastgroup == "bracket_end":
                 r += s[: m.end()]  # string until ']'
                 if debug:
-                    print('    ], r = "{}", remainder = "{}"'.format(r, s[m.end() :]))
+                    print(f'    ], r = "{r}", remainder = "{s[m.end() :]}"')
                 return r, min_priority, s[m.end() :]
         if debug:
-            print('    return, r = "{}", min_priority = {}'.format(r, min_priority))
+            print(f'    return, r = "{r}", min_priority = {min_priority}')
         return r, min_priority, ""
 
     def modify_output(self, s, remove_new_lines=True):
         debug = False
         if debug:
-            print('modify_output 0 = "{}"'.format(s))
+            print(f'modify_output 0 = "{s}"')
         if remove_new_lines:
             # r'"(\\.|[^"])*"' -> string enclosed in double quotes
             s = resub_outside((r" *\n *", ""), s, r'"(\\.|[^"])*"').strip()
@@ -816,10 +808,10 @@ class Maxima(object):
             r'"(\\.|[^"])*"',
         )
         if debug:
-            print('modify_output 1 = "{}"'.format(s))
+            print(f'modify_output 1 = "{s}"')
         s = self.remove_redundant_parentheses(s)[0]
         if debug:
-            print('modify_output 2 = "{}"'.format(s))
+            print(f'modify_output 2 = "{s}"')
         s = resub_outside(
             (
                 (r"([^(^\[=,])-", r"\1 - "),
@@ -831,7 +823,7 @@ class Maxima(object):
             r'"(\\.|[^"])*"',
         )
         if debug:
-            print('modify_output 3 = "{}"'.format(s))
+            print(f'modify_output 3 = "{s}"')
         return s
 
     def __del__(self):
@@ -1003,7 +995,7 @@ class MyTextCtrl(wx.TextCtrl):
     ):
         if sys.platform == "win32" and value == wx.EmptyString:
             # Font is never reflected as long as value is empty
-            super(MyTextCtrl, self).__init__(parent, id, " " + value, pos, size, style)
+            super(MyTextCtrl, self).__init__(parent, id, f" {value}", pos, size, style)
             self.SetSelection(0, 1)
         else:
             super(MyTextCtrl, self).__init__(parent, id, value, pos, size, style)
@@ -1036,11 +1028,11 @@ class MyTextCtrl(wx.TextCtrl):
         self.debug = False
 
     def shorten(self, s):
-        return s if len(s) <= 23 else s[:10] + "..." + s[-10:]
+        return s if len(s) <= 23 else f"{s[:10]}...{s[-10:]}"
 
     def record_operation(self):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         v = self.GetValue()  # unicode
         d = str_diff(self.last_value, v)
         if d[1] == "" and d[2] == "":
@@ -1048,17 +1040,12 @@ class MyTextCtrl(wx.TextCtrl):
             return
         if self.debug:
             print(
-                '{}: "{}" -> "{}"'.format(
-                    sys._getframe().f_code.co_name,
-                    self.shorten(self.last_value),
-                    self.shorten(v),
-                )
+                f"{sys._getframe().f_code.co_name}: "
+                f'"{self.shorten(self.last_value)}" -> "{self.shorten(v)}"'
             )
             print(
-                "{}: d = {}".format(
-                    sys._getframe().f_code.co_name,
-                    [d[0], self.shorten(d[1]), self.shorten(d[2])],
-                )
+                f"{sys._getframe().f_code.co_name}: "
+                f"d = {[d[0], self.shorten(d[1]), self.shorten(d[2])]}"
             )
         l = self.operations[-1]
         if (
@@ -1098,47 +1085,42 @@ class MyTextCtrl(wx.TextCtrl):
             self.operation_index = len(self.operations)
         if self.debug:
             print(
-                "{}: operations = {}".format(
-                    sys._getframe().f_code.co_name,
-                    [
-                        [i[0], self.shorten(i[1]), self.shorten(i[2])]
-                        for i in self.operations
-                    ],
-                )
+                f"{sys._getframe().f_code.co_name}: "
+                f"operations = {[[i[0], self.shorten(i[1]), self.shorten(i[2])] for i in self.operations]}"
             )
         self.last_value = v  # unicode
 
     def WriteText(self, text, record_op=True):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         self.record_op = record_op
         super(MyTextCtrl, self).WriteText(text)
         self.record_op = True
 
     def SetValue(self, value, record_op=True):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         self.record_op = record_op
         super(MyTextCtrl, self).SetValue(value)
         self.record_op = True
 
     def Replace(self, from_, to_, value, record_op=True):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         self.record_op = record_op
         super(MyTextCtrl, self).Replace(from_, to_, value)
         self.record_op = True
 
     def Remove(self, from_, to_, record_op=True):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         self.record_op = record_op
         super(MyTextCtrl, self).Remove(from_, to_)
         self.record_op = True
 
     def Cut(self, record_op=True):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         self.record_op = record_op
         super(MyTextCtrl, self).Cut()
         pyperclip.copy(pyperclip.paste())
@@ -1146,13 +1128,13 @@ class MyTextCtrl(wx.TextCtrl):
 
     def Copy(self):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         super(MyTextCtrl, self).Copy()
         pyperclip.copy(pyperclip.paste())
 
     def Paste(self, record_op=True):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         self.record_op = record_op
         pyperclip.copy(pyperclip.paste())
         super(MyTextCtrl, self).Paste()
@@ -1160,13 +1142,16 @@ class MyTextCtrl(wx.TextCtrl):
 
     def OnText(self, event):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         if self.record_op:
             self.record_operation()
-        if self.font is not None:
-            self.SetFont(self.font)
-            self.SetDefaultStyle(wx.TextAttr(wx.NullColour, font=self.font))
-        self.SetModified(True)
+        # Geminiが不要と言ったので外した        if self.font is not None:
+        # Geminiが不要と言ったので外した            self.SetFont(self.font)
+        # Geminiが不要と言ったので外した            self.SetDefaultStyle(wx.TextAttr(wx.NullColour, font=self.font))
+        # Geminiが不要と言ったので外した        self.SetModified(True)
+        # ※ 描画崩れがどうしても頻発する場合のみ残す（基本はフォント設定を外せば自然に直ることも多いです）
+        wx.CallAfter(self.Refresh)
+        event.Skip()  # イベントを親や他のハンドラに伝播させるために書くと安全です
 
     def insert_shortcut(
         self,
@@ -1178,7 +1163,7 @@ class MyTextCtrl(wx.TextCtrl):
         record_op=True,
     ):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         s = self.GetSelection()
         v = self.GetStringSelection()
         if find is not None:
@@ -1200,7 +1185,7 @@ class MyTextCtrl(wx.TextCtrl):
         )
 
     def OnCharHook(self, event):
-#        print(event.GetKeyCode())
+        #        print(event.GetKeyCode())
         if sys.platform.startswith("linux"):
             if event.GetModifiers() == wx.MOD_SHIFT:
                 if event.GetKeyCode() in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
@@ -1300,7 +1285,7 @@ class MyTextCtrl(wx.TextCtrl):
 
     def Undo(self):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         self.completion_from = None
         if self.operation_index == 0:
             return
@@ -1310,11 +1295,7 @@ class MyTextCtrl(wx.TextCtrl):
         o = self.operations[self.operation_index]
         if self.debug:
             print(
-                '{}: "{}" -> "{}"'.format(
-                    sys._getframe().f_code.co_name,
-                    self.shorten(o[2]),
-                    self.shorten(o[1]),
-                )
+                f'{sys._getframe().f_code.co_name}: "{self.shorten(o[2])}" -> "{self.shorten(o[1])}"'
             )
             if o[2] != self.GetRange(o[0], o[0] + len(o[2])):
                 print(
@@ -1328,18 +1309,14 @@ class MyTextCtrl(wx.TextCtrl):
 
     def Redo(self):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         self.completion_from = None
         if self.operation_index == len(self.operations):
             return
         o = self.operations[self.operation_index]
         if self.debug:
             print(
-                '{}: "{}" -> "{}"'.format(
-                    sys._getframe().f_code.co_name,
-                    self.shorten(o[1]),
-                    self.shorten(o[2]),
-                )
+                f'{sys._getframe().f_code.co_name}: "{self.shorten(o[1])}" -> "{self.shorten(o[2])}"'
             )
             if o[1] != self.GetRange(o[0], o[0] + len(o[1])):
                 print(
@@ -1354,7 +1331,7 @@ class MyTextCtrl(wx.TextCtrl):
 
     def LoadFile(self, filename, fileType=wx.TEXT_TYPE_ANY):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         with open(filename, "rb") as f:
             s = f.read()
         try:
@@ -1376,7 +1353,7 @@ class MyTextCtrl(wx.TextCtrl):
 
     def completion(self):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         if self.completion_from is None:
             s = self.GetSelection()
             v = self.GetValue()  # unicode
@@ -1412,7 +1389,7 @@ class MyTextCtrl(wx.TextCtrl):
 
     def completion_forward(self):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         if self.completion_from is not None:
             self.completion_index %= len(self.completion_candidates)
             self.Replace(
@@ -1421,12 +1398,12 @@ class MyTextCtrl(wx.TextCtrl):
                 self.completion_candidates[self.completion_index],
                 record_op=False,
             )
-#            self.SetSelection(self.completion_from, self.GetInsertionPoint())
+            #            self.SetSelection(self.completion_from, self.GetInsertionPoint())
             self.completion_index += 1
 
     def completion_backward(self):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         if self.completion_from is not None:
             self.completion_index = (self.completion_index - 2) % len(
                 self.completion_candidates
@@ -1437,12 +1414,12 @@ class MyTextCtrl(wx.TextCtrl):
                 self.completion_candidates[self.completion_index],
                 record_op=False,
             )
-#            self.SetSelection(self.completion_from, self.GetInsertionPoint())
+            #            self.SetSelection(self.completion_from, self.GetInsertionPoint())
             self.completion_index += 1
 
     def send_commands_to_maxima(self):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         s = self.GetSelection()
         if s[0] == s[1]:
             v = self.GetValue()  # unicode
@@ -1482,7 +1459,7 @@ class MyTextCtrl(wx.TextCtrl):
                     j = self.GetInsertionPoint()
                     self.SetSelection(j - l_output, j)
             except:
-#                print(sys.exc_info())
+                #                print(sys.exc_info())
                 pass
         else:
             try:
@@ -1493,12 +1470,12 @@ class MyTextCtrl(wx.TextCtrl):
                 j = self.GetInsertionPoint()
                 self.SetSelection(j - l_output, j)
             except:
-#                print(sys.exc_info())
+                #                print(sys.exc_info())
                 pass
 
     def set_negative(self):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         s = self.GetSelection()
         if s[0] != s[1]:
             ss = self.GetStringSelection()
@@ -1511,12 +1488,12 @@ class MyTextCtrl(wx.TextCtrl):
                 self.Replace(s[0], s[1], v)
                 self.SetSelection(s[0], s[0] + len(v))
             except:
-#                print(sys.exc_info())
+                #                print(sys.exc_info())
                 pass
 
     def set_reciprocal(self):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         s = self.GetSelection()
         if s[0] != s[1]:
             try:
@@ -1528,12 +1505,12 @@ class MyTextCtrl(wx.TextCtrl):
                 self.Replace(s[0], s[1], v)
                 self.SetSelection(s[0], s[0] + len(v))
             except:
-#                print(sys.exc_info())
+                #                print(sys.exc_info())
                 pass
 
     def multiply(self, multiplier):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         s = list(self.GetSelection())
         if s[0] != s[1]:
             try:
@@ -1554,12 +1531,12 @@ class MyTextCtrl(wx.TextCtrl):
                 self.Replace(s[0], s[1], v)
                 self.SetSelection(s[0], s[0] + len(v))
             except:
-#                print(sys.exc_info())
+                #                print(sys.exc_info())
                 pass
 
     def plus(self, additive):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         s = list(self.GetSelection())
         if s[0] != s[1]:
             try:
@@ -1575,12 +1552,12 @@ class MyTextCtrl(wx.TextCtrl):
                 self.Replace(s[0], s[1], v)
                 self.SetSelection(s[0], s[0] + len(v))
             except:
-#                print(sys.exc_info())
+                #                print(sys.exc_info())
                 pass
 
     def power(self, exponent):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         s = list(self.GetSelection())
         if s[0] != s[1]:
             try:
@@ -1597,12 +1574,12 @@ class MyTextCtrl(wx.TextCtrl):
                 self.Replace(s[0], s[1], v)
                 self.SetSelection(s[0], s[0] + len(v))
             except:
-#                print(sys.exc_info())
+                #                print(sys.exc_info())
                 pass
 
     def exchange_hands(self):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         s = self.GetSelection()
         if s[0] != s[1]:
             v = self.GetStringSelection()
@@ -1614,7 +1591,7 @@ class MyTextCtrl(wx.TextCtrl):
 
     def declare_integer(self):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         s = self.GetSelection()
         if s[0] != s[1]:
             v = self.GetStringSelection()
@@ -1653,7 +1630,7 @@ class MyTextCtrl(wx.TextCtrl):
 
     def reset_styles(self):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         self.SetStyle(0, len(self.GetValue()), wx.TextAttr(wx.BLACK, wx.WHITE))
         if self.font is not None:
             self.SetDefaultStyle(wx.TextAttr(wx.NullColour, font=self.font))
@@ -1668,7 +1645,7 @@ class MyTextCtrl(wx.TextCtrl):
         line_comments=None,
     ):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         s = self.GetStringSelection()
         levels = str_levels(s, parentheses, literals, literal_escape, line_comments)
         if len(levels) == 0:
@@ -1684,7 +1661,7 @@ class MyTextCtrl(wx.TextCtrl):
 
     def indent(self, indenter=" "):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         s = list(self.GetSelection())
         v = self.GetValue()
         s[0] = v.rfind("\n", 0, s[0]) + 1
@@ -1700,7 +1677,7 @@ class MyTextCtrl(wx.TextCtrl):
 
     def unindent(self, indenter=None):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         s = list(self.GetSelection())
         v = self.GetValue()
         s[0] = v.rfind("\n", 0, s[0]) + 1
@@ -1719,7 +1696,7 @@ class MyTextCtrl(wx.TextCtrl):
 
     def change_leading_space_to_tab(self):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         s = self.GetSelection()
         if s[0] != s[1]:
             v = w = self.GetStringSelection()
@@ -1738,7 +1715,7 @@ class MyTextCtrl(wx.TextCtrl):
 
     def change_leading_tab_to_space(self):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         s = self.GetSelection()
         if s[0] != s[1]:
             v = w = self.GetStringSelection()
@@ -1757,7 +1734,7 @@ class MyTextCtrl(wx.TextCtrl):
 
     def delete_trailing_spaces(self):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         s = self.GetSelection()
         if s[0] != s[1]:
             v = w = self.GetStringSelection()
@@ -1773,7 +1750,7 @@ class MyTextCtrl(wx.TextCtrl):
 
     def transform_chars(self, method="upper"):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         s = self.GetSelection()
         if s[0] != s[1]:
             v = w = self.GetStringSelection()
@@ -1804,7 +1781,7 @@ class MyTextCtrl(wx.TextCtrl):
 
     def line_numbered(self, head=True, prefix="", suffix=": "):
         if self.debug:
-            print("----- " + sys._getframe().f_code.co_name + " -----")
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         s = list(self.GetSelection())
         v = self.GetValue()
         s[0] = v.rfind("\n", 0, s[0]) + 1
@@ -1882,13 +1859,10 @@ class MyTable(wx.grid.GridTableBase):
         return True
 
     def DeleteRows(self, pos=0, numRows=1):
-        try:
-            if self.GetNumberRows() == 0:
-                return False
-            del self.data[pos : pos + numRows]
-            return True
-        except:
+        if pos < 0 or pos >= self.GetNumberRows():
             return False
+        del self.data[pos : pos + numRows]
+        return True
 
 
 class TableForFind(MyTable):
@@ -1953,6 +1927,8 @@ class TableForFind(MyTable):
             self.data = data
 
     def GetValue(self, row, col):
+        if row < 0 or row >= len(self.data) or col < 0 or col >= len(self.data[row]):
+            return ""
         if col in (self.COL_ACTIVE, self.COL_RE):
             return "1" if self.data[row][col] else ""
         else:
@@ -2040,76 +2016,114 @@ class GridWithCellToolTip(wx.grid.Grid):
             False
         )  # needed to avoid "Segmentation fault: 11" in button_delete_gridOnButtonClick
         self.GetGridWindow().Bind(wx.EVT_MOTION, self.OnMouseOver)
+        self.debug = False
 
     def OnMouseOver(self, event):
         # Method to calculate where the mouse is pointing and then set the tooltip dynamically.
         # https://stackoverflow.com/questions/20589686/tooltip-message-when-hovering-on-cell-with-mouse-in-wx-grid-wxpython
-        try:
-            if self.table.tooltips is not None:
-                # Use CalcUnscrolledPosition() to get the mouse position within the entire grid including what's offscreen
-                c = self.XYToCell(
-                    *self.CalcUnscrolledPosition(event.GetX(), event.GetY())
-                )
+        if self.table.tooltips is not None:
+            # Use CalcUnscrolledPosition() to get the mouse position within the entire grid including what's offscreen
+            c = self.XYToCell(
+                *self.CalcUnscrolledPosition(event.GetX(), event.GetY())
+            )
+            if c.Row != wx.grid.GRID_NOT_FOUND and c.Col != wx.grid.GRID_NOT_FOUND:
                 row = min(c.Row, len(self.table.tooltips) - 1)
                 col = min(c.Col, len(self.table.tooltips[0]) - 1)
                 s = self.table.tooltips[row][col]
                 if s is None:
                     s = ""
                 event.GetEventObject().SetToolTip(s)
-        except:
-#            print(sys.exc_info())
-            pass
         event.Skip()
 
     def AppendRows(self, numRows=1, updateLabels=True):
+        if self.debug:
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         if wx.grid.Grid.AppendRows(self, numRows, updateLabels):
-            self.UpdateView(numRows)
+            self.BeginBatch()
+            self.ProcessTableMessage(
+                wx.grid.GridTableMessage(
+                    self.table, wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED, numRows
+                )
+            )
+            self.ProcessTableMessage(
+                wx.grid.GridTableMessage(
+                    self.table, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES
+                )
+            )
+            self.EndBatch()
+            self.AdjustScrollbars()
+            self.ForceRefresh()
             return True
         else:
             return False
 
     def InsertRows(self, pos=0, numRows=1, updateLabels=True):
+        if self.debug:
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         if wx.grid.Grid.InsertRows(self, pos, numRows, updateLabels):
-            self.UpdateView(numRows)
+            self.BeginBatch()
+            self.ProcessTableMessage(
+                wx.grid.GridTableMessage(
+                    self.table, wx.grid.GRIDTABLE_NOTIFY_ROWS_INSERTED, pos, numRows
+                )
+            )
+            self.ProcessTableMessage(
+                wx.grid.GridTableMessage(
+                    self.table, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES
+                )
+            )
+            self.EndBatch()
+            self.AdjustScrollbars()
+            self.ForceRefresh()
             return True
         else:
             return False
 
     def DeleteRows(self, pos=0, numRows=1, updateLabels=True):
+        if self.debug:
+            print(f"----- {sys._getframe().f_code.co_name} -----")
+        total_rows = self.GetNumberRows()
+        if total_rows == 0 or pos < 0 or pos >= total_rows:
+            return False
+        if pos + numRows > total_rows:
+            numRows = total_rows - pos
         if wx.grid.Grid.DeleteRows(self, pos, numRows, updateLabels):
-            self.UpdateView(-numRows)
+            self.BeginBatch()
+            self.ProcessTableMessage(
+                wx.grid.GridTableMessage(
+                    self.table, wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED, pos, numRows
+                )
+            )
+            self.ProcessTableMessage(
+                wx.grid.GridTableMessage(
+                    self.table, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES
+                )
+            )
+            self.EndBatch()
+            self.AdjustScrollbars()
+            self.ForceRefresh()
             return True
         else:
             return False
 
-    def UpdateView(self, numOfRowsIncreased):
-        self.BeginBatch()
-        self.ProcessTableMessage(
-            wx.grid.GridTableMessage(
-                self.table, wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED, numOfRowsIncreased
-            )
-        )
-        self.ProcessTableMessage(
-            wx.grid.GridTableMessage(
-                self.table, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES
-            )
-        )
-        self.EndBatch()
-        self.AdjustScrollbars()
-        self.ForceRefresh()
-
     def Copy(self):
+        if self.debug:
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         col = self.GetGridCursorCol()
         if self.table.data_types[col] == wx.grid.GRID_VALUE_STRING:
             pyperclip.copy(self.table.GetValue(self.GetGridCursorRow(), col))
 
     def Paste(self):
+        if self.debug:
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         col = self.GetGridCursorCol()
         if self.table.data_types[col] == wx.grid.GRID_VALUE_STRING:
             self.table.SetValue(self.GetGridCursorRow(), col, pyperclip.paste())
             self.ForceRefresh()
 
     def Cut(self):
+        if self.debug:
+            print(f"----- {sys._getframe().f_code.co_name} -----")
         col = self.GetGridCursorCol()
         if self.table.data_types[col] == wx.grid.GRID_VALUE_STRING:
             row = self.GetGridCursorRow()
@@ -2395,9 +2409,13 @@ class DialogFind(wx.Dialog):
         self.grid_find.ForceRefresh()
 
     def button_insert_gridOnButtonClick(self, event):
+        grid = self.FindWindowByName(
+            event.GetEventObject().GetName()[1:], event.GetEventObject().GetParent()
+        )
+        row, col = grid.GetGridCursorRow(), grid.GetGridCursorCol()
         self.FindWindowByName(
             event.GetEventObject().GetName()[1:], event.GetEventObject().GetParent()
-        ).InsertRows(0, 1)
+        ).InsertRows(row, 1)
 
     def button_append_gridOnButtonClick(self, event):
         self.FindWindowByName(
@@ -2448,11 +2466,11 @@ class DialogFind(wx.Dialog):
         t = self.grid_find.table
         row = self.grid_find.GetGridCursorRow()
         t.data[row][t.COL_RE] = True
-#        t.data[row][t.COL_FIND] = (r'([\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#~]|^)' +
-#            ('' if t.data[row][t.COL_FIND] is None else t.data[row][t.COL_FIND]) +
-#            r'(?=[\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#]|$)')
-#        t.data[row][t.COL_REPLACE] = (r'\1' +
-#            ('' if t.data[row][t.COL_REPLACE] is None else t.data[row][t.COL_REPLACE]))
+        #        t.data[row][t.COL_FIND] = (r'([\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#~]|^)' +
+        #            ('' if t.data[row][t.COL_FIND] is None else t.data[row][t.COL_FIND]) +
+        #            r'(?=[\t\n +\-*/^=(){}\[\],.:;?' + "'" + r'"%&<>\\#]|$)')
+        #        t.data[row][t.COL_REPLACE] = (r'\1' +
+        #            ('' if t.data[row][t.COL_REPLACE] is None else t.data[row][t.COL_REPLACE]))
         t.data[row][t.COL_FIND] = (
             r"\b"
             + ("" if t.data[row][t.COL_FIND] is None else t.data[row][t.COL_FIND])
@@ -2461,7 +2479,7 @@ class DialogFind(wx.Dialog):
         self.grid_find.ForceRefresh()
 
     def button_colorizeOnButtonClick(self, event):
-#        self.target.reset_styles()
+        #        self.target.reset_styles()
         v = self.target.GetValue()
         n = 0
         found = []
@@ -3552,7 +3570,11 @@ class FrameMain(wx.Frame):
             self.menuItem_OF_compressible_turbulentTemperatureRadCoupledMixed
         )
         self.menuItem_OF_constantAlphaContactAngle = wx.MenuItem(
-            self.menu_OF, wx.ID_ANY, "constantAlphaContactAngle", wx.EmptyString, wx.ITEM_NORMAL
+            self.menu_OF,
+            wx.ID_ANY,
+            "constantAlphaContactAngle",
+            wx.EmptyString,
+            wx.ITEM_NORMAL,
         )
         self.menu_OF_bc_C.Append(self.menuItem_OF_constantAlphaContactAngle)
         self.menuItem_OF_cyclic = wx.MenuItem(
@@ -5241,7 +5263,7 @@ class FrameMain(wx.Frame):
         )
 
     def menuItem_updateOnMenuSelection(self, event):
-#        s = get_file_from_google_drive('1Rm9P1CIbn_YUuvpMYj39MSF7djuVnPPV')
+        #        s = get_file_from_google_drive('1Rm9P1CIbn_YUuvpMYj39MSF7djuVnPPV')
         s = get_file_from_github_public(
             user="gitwamoto",
             repository="texteditwx",
@@ -5265,29 +5287,29 @@ class FrameMain(wx.Frame):
             with open(p, "wb") as f:
                 f.write(s[0])
             pd = os.path.dirname(p)
-#            d = os.path.join(pd, 'locale', 'en', 'LC_MESSAGES')
-#            if not os.path.isdir(d):
-#                os.makedirs(d)
-#            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
-#                branch = 'main', file_path = 'locale/en/LC_MESSAGES/messages.mo')
-#            if s is not None:
-#                with open(os.path.join(d, 'messages.mo'), 'wb') as f:
-#                    f.write(s[0])
-#            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
-#                branch = 'main', file_path = 'locale/en/LC_MESSAGES/messages.po')
-#            if s is not None:
-#                with open(os.path.join(d, 'messages.po'), 'wb') as f:
-#                    f.write(s[0])
-#            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
-#                branch = 'main', file_path = 'locale/messages.pot')
-#            if s is not None:
-#                with open(os.path.join(pd, 'locale', 'messages.pot'), 'wb') as f:
-#                    f.write(s[0])
-#            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
-#                branch = 'main', file_path = 'README.md')
-#            if s is not None:
-#                with open(os.path.join(pd, 'README.md'), 'wb') as f:
-#                    f.write(s[0])
+            #            d = os.path.join(pd, 'locale', 'en', 'LC_MESSAGES')
+            #            if not os.path.isdir(d):
+            #                os.makedirs(d)
+            #            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
+            #                branch = 'main', file_path = 'locale/en/LC_MESSAGES/messages.mo')
+            #            if s is not None:
+            #                with open(os.path.join(d, 'messages.mo'), 'wb') as f:
+            #                    f.write(s[0])
+            #            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
+            #                branch = 'main', file_path = 'locale/en/LC_MESSAGES/messages.po')
+            #            if s is not None:
+            #                with open(os.path.join(d, 'messages.po'), 'wb') as f:
+            #                    f.write(s[0])
+            #            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
+            #                branch = 'main', file_path = 'locale/messages.pot')
+            #            if s is not None:
+            #                with open(os.path.join(pd, 'locale', 'messages.pot'), 'wb') as f:
+            #                    f.write(s[0])
+            #            s = get_file_from_github_public(user = 'gitwamoto', repository = 'texteditwx',
+            #                branch = 'main', file_path = 'README.md')
+            #            if s is not None:
+            #                with open(os.path.join(pd, 'README.md'), 'wb') as f:
+            #                    f.write(s[0])
             if os.path.isfile(os.path.join(pd, "modules_needed.txt")):
                 os.remove(os.path.join(pd, "modules_needed.txt"))
             with wx.MessageDialog(
