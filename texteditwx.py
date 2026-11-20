@@ -151,7 +151,7 @@ def time_str_a_is_newer_than_b(a, b):
         time_a[3] += 12
     if rb.groups()[-1] is not None and rb.groups()[-1].upper() == "PM":
         time_b[3] += 12
-    return True if time_a > time_b else False
+    return time_a > time_b
 
 
 def correct_file_name_in_unicode(file_name):
