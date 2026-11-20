@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/11/19 9:50:46 PM
+# 2026/11/19 11:13:26 PM
 
-version = "2026/11/19 9:50:46 PM"
+version = "2026/11/19 11:13:26 PM"
 
 import sys
 
@@ -1299,11 +1299,7 @@ class MyTextCtrl(wx.TextCtrl):
             )
             if o[2] != self.GetRange(o[0], o[0] + len(o[2])):
                 print(
-                    '{}: !!!!! "{}" != "{}"'.format(
-                        sys._getframe().f_code.co_name,
-                        o[2],
-                        self.GetRange(o[0], o[0] + len(o[2])),
-                    )
+                    f'{sys._getframe().f_code.co_name}: !!!!! "{o[2]}" != "{self.GetRange(o[0], o[0] + len(o[2]))}"'
                 )
         self.Replace(o[0], o[0] + len(o[2]), o[1], record_op=False)
 
@@ -1320,11 +1316,7 @@ class MyTextCtrl(wx.TextCtrl):
             )
             if o[1] != self.GetRange(o[0], o[0] + len(o[1])):
                 print(
-                    '{}: !!!!! "{}" != "{}"'.format(
-                        sys._getframe().f_code.co_name,
-                        o[1],
-                        self.GetRange(o[0], o[0] + len(o[1])),
-                    )
+                    f'{sys._getframe().f_code.co_name}: !!!!! "{o[1]}" != "{self.GetRange(o[0], o[0] + len(o[1]))}"'
                 )
         self.Replace(o[0], o[0] + len(o[1]), o[2], record_op=False)
         self.operation_index += 1
@@ -2023,10 +2015,8 @@ class GridWithCellToolTip(wx.grid.Grid):
         # https://stackoverflow.com/questions/20589686/tooltip-message-when-hovering-on-cell-with-mouse-in-wx-grid-wxpython
         if self.table.tooltips is not None:
             # Use CalcUnscrolledPosition() to get the mouse position within the entire grid including what's offscreen
-            c = self.XYToCell(
-                *self.CalcUnscrolledPosition(event.GetX(), event.GetY())
-            )
-            if c.Row != wx.grid.GRID_NOT_FOUND and c.Col != wx.grid.GRID_NOT_FOUND:
+            c = self.XYToCell(*self.CalcUnscrolledPosition(event.GetX(), event.GetY()))
+            if c.Row != -1 and c.Col != -1:
                 row = min(c.Row, len(self.table.tooltips) - 1)
                 col = min(c.Col, len(self.table.tooltips[0]) - 1)
                 s = self.table.tooltips[row][col]
@@ -2039,20 +2029,7 @@ class GridWithCellToolTip(wx.grid.Grid):
         if self.debug:
             print(f"----- {sys._getframe().f_code.co_name} -----")
         if wx.grid.Grid.AppendRows(self, numRows, updateLabels):
-            self.BeginBatch()
-            self.ProcessTableMessage(
-                wx.grid.GridTableMessage(
-                    self.table, wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED, numRows
-                )
-            )
-            self.ProcessTableMessage(
-                wx.grid.GridTableMessage(
-                    self.table, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES
-                )
-            )
-            self.EndBatch()
-            self.AdjustScrollbars()
-            self.ForceRefresh()
+            self.UpdateView(wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED, numRows)
             return True
         else:
             return False
@@ -2061,20 +2038,7 @@ class GridWithCellToolTip(wx.grid.Grid):
         if self.debug:
             print(f"----- {sys._getframe().f_code.co_name} -----")
         if wx.grid.Grid.InsertRows(self, pos, numRows, updateLabels):
-            self.BeginBatch()
-            self.ProcessTableMessage(
-                wx.grid.GridTableMessage(
-                    self.table, wx.grid.GRIDTABLE_NOTIFY_ROWS_INSERTED, pos, numRows
-                )
-            )
-            self.ProcessTableMessage(
-                wx.grid.GridTableMessage(
-                    self.table, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES
-                )
-            )
-            self.EndBatch()
-            self.AdjustScrollbars()
-            self.ForceRefresh()
+            self.UpdateView(wx.grid.GRIDTABLE_NOTIFY_ROWS_INSERTED, pos, numRows)
             return True
         else:
             return False
@@ -2088,23 +2052,28 @@ class GridWithCellToolTip(wx.grid.Grid):
         if pos + numRows > total_rows:
             numRows = total_rows - pos
         if wx.grid.Grid.DeleteRows(self, pos, numRows, updateLabels):
-            self.BeginBatch()
-            self.ProcessTableMessage(
-                wx.grid.GridTableMessage(
-                    self.table, wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED, pos, numRows
-                )
-            )
-            self.ProcessTableMessage(
-                wx.grid.GridTableMessage(
-                    self.table, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES
-                )
-            )
-            self.EndBatch()
-            self.AdjustScrollbars()
-            self.ForceRefresh()
+            self.UpdateView(wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED, pos, numRows)
             return True
         else:
             return False
+
+    def UpdateView(self, messageId=None, comInt1=-1, comInt2=-1):
+        # messageId = wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED -> comInt1 = numRows
+        # messageId = wx.grid.GRIDTABLE_NOTIFY_ROWS_INSERTED -> comInt1 = pos, comInt2 = numRows
+        # messageId = wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED -> comInt1 = pos, comInt2 = numRows
+        self.BeginBatch()
+        if messageId is not None:
+            self.ProcessTableMessage(
+                wx.grid.GridTableMessage(self.table, messageId, comInt1, comInt2)
+            )
+        self.ProcessTableMessage(
+            wx.grid.GridTableMessage(
+                self.table, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES
+            )
+        )
+        self.EndBatch()
+        self.AdjustScrollbars()
+        self.ForceRefresh()
 
     def Copy(self):
         if self.debug:
@@ -2449,6 +2418,7 @@ class DialogFind(wx.Dialog):
                 grid.table.data[row],
             )
             grid.SetGridCursor(row + 1, col)
+            self.grid_find.UpdateView()
 
     def button_decrease_gridOnButtonClick(self, event):
         grid = self.FindWindowByName(
@@ -2461,6 +2431,7 @@ class DialogFind(wx.Dialog):
                 grid.table.data[row],
             )
             grid.SetGridCursor(row - 1, col)
+            self.grid_find.UpdateView()
 
     def button_variableOnButtonClick(self, event):
         t = self.grid_find.table
@@ -2553,24 +2524,31 @@ class DialogFind(wx.Dialog):
     def insert_find(self, row, value):
         for i in range(len(self.grid_find.table.data)):
             if self.grid_find.table.data[i][self.grid_find.table.COL_FIND] == value:
-                self.grid_find.table.data.insert(0, self.grid_find.table.data[i])
-                del self.grid_find.table.data[i + 1]
-                self.grid_find.UpdateView(0)
+                self.grid_find.table.data[0], self.grid_find.table.data[i] = (
+                    self.grid_find.table.data[i],
+                    self.grid_find.table.data[0],
+                )
+                self.grid_find.UpdateView()
                 return
-        n = 0
         if self.grid_find.table.data[0][self.grid_find.table.COL_FIND] is not None:
-            n = 1
             self.grid_find.table.InsertRows(0, 1)
-        self.grid_find.table.SetValue(0, self.grid_find.table.COL_FIND, value)
-        self.grid_find.UpdateView(n)
+            self.grid_find.table.SetValue(0, self.grid_find.table.COL_FIND, value)
+            self.grid_find.UpdateView(wx.grid.GRIDTABLE_NOTIFY_ROWS_INSERTED, 0, 1)
+        else:
+            self.grid_find.table.SetValue(0, self.grid_find.table.COL_FIND, value)
+            self.grid_find.UpdateView()
 
     def insert_replace(self, row, value):
-        n = 0
         if self.grid_find.table.data[0][self.grid_find.table.COL_REPLACE] is not None:
-            n = 1
-            self.grid_find.table.InsertRows(0, 1)
-        self.grid_find.table.SetValue(0, self.grid_find.table.COL_REPLACE, value)
-        self.grid_find.UpdateView(n)
+            if self.grid_find.table.data[0][self.grid_find.table.COL_REPLACE] != value:
+                self.grid_find.table.InsertRows(0, 1)
+                self.grid_find.table.SetValue(
+                    0, self.grid_find.table.COL_REPLACE, value
+                )
+                self.grid_find.UpdateView(wx.grid.GRIDTABLE_NOTIFY_ROWS_INSERTED, 0, 1)
+        else:
+            self.grid_find.table.SetValue(0, self.grid_find.table.COL_REPLACE, value)
+            self.grid_find.UpdateView()
 
     def button_rep_allOnButtonClick(self, event):
         s = self.target.GetSelection()
