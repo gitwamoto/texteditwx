@@ -1151,7 +1151,7 @@ class MyTextCtrl(wx.TextCtrl):
         # Geminiが不要と言ったので外した        self.SetModified(True)
         # ※ 描画崩れがどうしても頻発する場合のみ残す（基本はフォント設定を外せば自然に直ることも多いです）
         wx.CallAfter(self.Refresh)
-        event.Skip()  # イベントを親や他のハンドラに伝播させるために書くと安全です
+#        event.Skip()  # イベントを親や他のハンドラに伝播させるために書くと安全です
 
     def insert_shortcut(
         self,
@@ -1185,7 +1185,7 @@ class MyTextCtrl(wx.TextCtrl):
         )
 
     def OnCharHook(self, event):
-        #        print(event.GetKeyCode())
+#        print(event.GetKeyCode())
         if sys.platform.startswith("linux"):
             if event.GetModifiers() == wx.MOD_SHIFT:
                 if event.GetKeyCode() in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
