@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/11/19 11:13:26 PM
+# 2026/11/27 8:47:49 PM
 
-version = "2026/11/19 11:13:26 PM"
+version = "2026/11/27 8:47:49 PM"
 
 import sys
 
@@ -1151,7 +1151,8 @@ class MyTextCtrl(wx.TextCtrl):
         # Geminiが不要と言ったので外した        self.SetModified(True)
         # ※ 描画崩れがどうしても頻発する場合のみ残す（基本はフォント設定を外せば自然に直ることも多いです）
         wx.CallAfter(self.Refresh)
-#        event.Skip()  # イベントを親や他のハンドラに伝播させるために書くと安全です
+
+    #        event.Skip()  # イベントを親や他のハンドラに伝播させるために書くと安全です
 
     def insert_shortcut(
         self,
@@ -1185,7 +1186,7 @@ class MyTextCtrl(wx.TextCtrl):
         )
 
     def OnCharHook(self, event):
-#        print(event.GetKeyCode())
+        #        print(event.GetKeyCode())
         if sys.platform.startswith("linux"):
             if event.GetModifiers() == wx.MOD_SHIFT:
                 if event.GetKeyCode() in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
@@ -2522,33 +2523,43 @@ class DialogFind(wx.Dialog):
         self.target.reset_styles()
 
     def insert_find(self, row, value):
-        for i in range(len(self.grid_find.table.data)):
-            if self.grid_find.table.data[i][self.grid_find.table.COL_FIND] == value:
-                self.grid_find.table.data[0], self.grid_find.table.data[i] = (
-                    self.grid_find.table.data[i],
-                    self.grid_find.table.data[0],
-                )
-                self.grid_find.UpdateView()
+        total_rows = self.grid_find.GetNumberRows()  # 行数が足りない場合
+        if row >= total_rows:
+            self.grid_find.AppendRows(row - total_rows + 1)
+        # 検索文字列がすでにあるかを調べる．
+        i = next(
+            (
+                j
+                for j, r in enumerate(self.grid_find.table.data)
+                if r[self.grid_find.table.COL_FIND] == value
+            ),
+            None,
+        )
+        if i is not None:  # 検索文字列がすでにある場合
+            if i == row:
                 return
-        if self.grid_find.table.data[0][self.grid_find.table.COL_FIND] is not None:
-            self.grid_find.table.InsertRows(0, 1)
-            self.grid_find.table.SetValue(0, self.grid_find.table.COL_FIND, value)
-            self.grid_find.UpdateView(wx.grid.GRIDTABLE_NOTIFY_ROWS_INSERTED, 0, 1)
+            d = [r for j, r in enumerate(self.grid_find.table.data) if j != i]
+            self.grid_find.table.data = (
+                d[:row] + [self.grid_find.table.data[i]] + d[row:]
+            )
+            self.grid_find.UpdateView()
+            return
+        # 検索文字列がまだない場合
+        if self.grid_find.table.data[row][self.grid_find.table.COL_FIND] is not None:
+            self.grid_find.table.InsertRows(row, 1)
+            self.grid_find.table.SetValue(row, self.grid_find.table.COL_FIND, value)
+            self.grid_find.UpdateView(wx.grid.GRIDTABLE_NOTIFY_ROWS_INSERTED, row, 1)
         else:
-            self.grid_find.table.SetValue(0, self.grid_find.table.COL_FIND, value)
+            self.grid_find.table.SetValue(row, self.grid_find.table.COL_FIND, value)
             self.grid_find.UpdateView()
 
     def insert_replace(self, row, value):
-        if self.grid_find.table.data[0][self.grid_find.table.COL_REPLACE] is not None:
-            if self.grid_find.table.data[0][self.grid_find.table.COL_REPLACE] != value:
-                self.grid_find.table.InsertRows(0, 1)
-                self.grid_find.table.SetValue(
-                    0, self.grid_find.table.COL_REPLACE, value
-                )
-                self.grid_find.UpdateView(wx.grid.GRIDTABLE_NOTIFY_ROWS_INSERTED, 0, 1)
-        else:
-            self.grid_find.table.SetValue(0, self.grid_find.table.COL_REPLACE, value)
-            self.grid_find.UpdateView()
+        total_rows = self.grid_find.GetNumberRows()  # 行数が足りない場合
+        if row >= total_rows:
+            self.grid_find.AppendRows(row - total_rows + 1)
+        # 検索文字列が何であれ，とにかくその行の置換文字列をvalueにする
+        self.grid_find.table.SetValue(row, self.grid_find.table.COL_REPLACE, value)
+        self.grid_find.UpdateView()
 
     def button_rep_allOnButtonClick(self, event):
         s = self.target.GetSelection()
