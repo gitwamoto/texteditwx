@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # texteditwx.py
 # by Yukiharu Iwamoto
-# 2026/11/27 8:47:49 PM
+# 2026/11/28 5:47:17 PM
 
-version = "2026/11/27 8:47:49 PM"
+version = "2026/11/28 5:47:17 PM"
 
 import sys
 
@@ -28,7 +28,7 @@ import wx.grid
 import platform
 import gettext
 import codecs
-import datetime
+from datetime import datetime
 import pyperclip  # pip install pyperclip
 import requests
 import zenhan
@@ -351,18 +351,50 @@ def line_numbered_str(string, head=True, prefix="", suffix=": "):
     n = len(lines)
     if s_has_lf_in_last_line:
         n += 1
-    fmt = prefix + "%" + str(len("%d" % n)) + "d" + suffix
+    n = len(str(n))
     s = ""
     r = "\r\n" if s_has_cr else "\n"
     if head:
         for i, line in enumerate(lines, start=1):
-            s += fmt % i + line + r
+            s += f"{prefix}{i:{n}d}{suffix}{line}{r}"
     else:
         for i, line in enumerate(lines, start=1):
-            s += line + fmt % i + r
+            s += f"{line}{prefix}{i:{n}d}{suffix}{r}"
     if not s_has_lf_in_last_line:
         s = s[: -len(r)]
     return s
+
+
+def now_string():
+    now = datetime.now()
+    return (
+        f"{now.year}/{now.month}/{now.day} "
+        f"{12 - (24 - now.hour) % 12}:{now.minute:02d}:{now.second:02d} "
+        f"{'A' if now.hour < 12 else 'P'}M"
+    )
+
+
+def weekday_appended_str(string):
+    weekdays = ["月", "火", "水", "木", "金", "土", "日"]
+
+    def insert_weekday(
+        m,
+    ):  # マッチするたびに呼び出され、日付に曜日を付加した文字列を返す関数
+        try:
+            if m["year"]:
+                y = int(m["year"])
+            else:
+                y = datetime.now().year
+            return f"{m['date']}({weekdays[datetime(y, int(m['month']), int(m['day'])).weekday()]})"
+        except ValueError:
+            # 存在しない日付（例: 2026/02/30 など）の場合は置換せずそのまま返す
+            return m[0]
+
+    return re.sub(
+        "(?P<date>(?:(?P<year>[0-9０-９]+)[/年])?(?P<month>[0-9０-９]+)[/月](?P<day>[0-9０-９]+)日?)(?! *[（(])",
+        insert_weekday,
+        string,
+    )
 
 
 def resub_outside(pat_repl, string, inside_pattern=r'"(\\.|[^"])*"'):
@@ -1782,6 +1814,22 @@ class MyTextCtrl(wx.TextCtrl):
         if s[1] == -1:
             s[1] = len(v)
         v = line_numbered_str(v[s[0] : s[1]], head, prefix, suffix)
+        self.Replace(s[0], s[1], v)
+        self.SetSelection(s[0], s[0] + len(v))
+
+    def insert_now(self):
+        if self.debug:
+            print(f"----- {sys._getframe().f_code.co_name} -----")
+        self.WriteText(now_string())
+
+    def append_weekday(self):
+        if self.debug:
+            print(f"----- {sys._getframe().f_code.co_name} -----")
+        s = self.GetSelection()
+        v = self.GetValue()
+        if s[0] == s[1]:
+            s = (0, len(v))
+        v = weekday_appended_str(v[s[0] : s[1]])
         self.Replace(s[0], s[1], v)
         self.SetSelection(s[0], s[0] + len(v))
 
@@ -3325,10 +3373,14 @@ class FrameMain(wx.Frame):
         )
         self.menu_edit.Append(self.menuItem_completion_backward)
         self.menu_edit.AppendSeparator()
-        self.menuItem_datetime = wx.MenuItem(
-            self.menu_edit, wx.ID_ANY, _("日時を挿入"), wx.EmptyString, wx.ITEM_NORMAL
+        self.menuItem_insert_now = wx.MenuItem(
+            self.menu_edit, wx.ID_ANY, _("日時を挿入") + "\tShift+Ctrl+N", wx.EmptyString, wx.ITEM_NORMAL
         )
-        self.menu_edit.Append(self.menuItem_datetime)
+        self.menu_edit.Append(self.menuItem_insert_now)
+        self.menuItem_append_weekday = wx.MenuItem(
+            self.menu_edit, wx.ID_ANY, _("曜日を追加") + "\tShift+Ctrl+W", wx.EmptyString, wx.ITEM_NORMAL
+        )
+        self.menu_edit.Append(self.menuItem_append_weekday)
         self.menu_edit.AppendSeparator()
         self.menuItem_colorize_texts = wx.MenuItem(
             self.menu_edit,
@@ -3994,8 +4046,13 @@ class FrameMain(wx.Frame):
         )
         self.Bind(
             wx.EVT_MENU,
-            self.menuItem_datetimeOnMenuSelection,
-            id=self.menuItem_datetime.GetId(),
+            self.menuItem_insert_nowOnMenuSelection,
+            id=self.menuItem_insert_now.GetId(),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            self.menuItem_append_weekdayOnMenuSelection,
+            id=self.menuItem_append_weekday.GetId(),
         )
         self.Bind(
             wx.EVT_MENU,
@@ -4572,18 +4629,11 @@ class FrameMain(wx.Frame):
         else:
             event.Skip()
 
-    def menuItem_datetimeOnMenuSelection(self, event):
-        if sys.platform == "win32":
-            self.textCtrl_edit.WriteText(
-                datetime.datetime.now()
-                .strftime("%Y/%m/%d %I:%M:%S %p")
-                .replace("/0", "/")
-                .replace(" 0", " ")
-            )
-        else:
-            self.textCtrl_edit.WriteText(
-                datetime.datetime.now().strftime("%Y/%-m/%-d %-I:%M:%S %p")
-            )
+    def menuItem_insert_nowOnMenuSelection(self, event):
+        self.textCtrl_edit.insert_now()
+
+    def menuItem_append_weekdayOnMenuSelection(self, event):
+        self.textCtrl_edit.append_weekday()
 
     def menuItem_colorize_textsOnMenuSelection(self, event):
         self.textCtrl_edit.colorize_texts(
